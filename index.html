@@ -773,11 +773,19 @@ async function genForClient(idx) {
   let extra_context = '';
   const cobTipo = c._cobranzaTipo || (selectedMood.startsWith('cobranza_') ? selectedMood.replace('cobranza_','') : null);
   if (cobTipo === 'migracion') {
-    const desc = c._descuento || '';
-    extra_context = desc
-      ? `\nDescuento especial de migración: $${desc} MXN. Menciónalo en el mensaje.`
-      : '\nMenciona que hay un descuento especial disponible para migrar.';
-    extra_context += '\nExplica que la academia migra a acceso permanente y ya no habrá mensualidades.';
+    const precio = precioDeEstatus(c.estatus);
+    const monto = precio ? parseInt(precio.replace(/[^\d]/g,'')) : 0;
+    const normal = monto * 10;
+    const desc = parseInt(c._descuento || '0') || 0;
+    const final = desc ? normal - desc : normal;
+    if (monto) {
+      extra_context = desc
+        ? `\nPrecio de migración a permanente: normalmente sería $${normal} MXN (su mensualidad de $${monto} × 10), pero con el descuento especial de $${desc} MXN queda en $${final} MXN. Con ese único pago se olvida para siempre de las mensualidades.`
+        : `\nPrecio de migración a permanente: $${normal} MXN pago único (su mensualidad de $${monto} × 10 meses). Con ese único pago se olvida para siempre de las mensualidades.`;
+    } else {
+      extra_context = '\nExplica que con un pago único se olvida para siempre de las mensualidades. Pídele que te pregunte el precio de su migración.';
+    }
+    extra_context += '\nMenciona que la academia está migrando al modelo de acceso permanente.';
   }
   if (cobTipo === 'anualidad_viejitos') {
     const precio = precioDeEstatus(c.estatus);
