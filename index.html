@@ -360,8 +360,8 @@ function diasConNosotros(fechaStr) {
   // Intentar parsear varios formatos: DD/MM/YYYY, YYYY-MM-DD, MM/DD/YYYY
   let d = null;
   const s = fechaStr.trim();
-  // YYYY-MM-DD
-  if (/^\d{4}-\d{2}-\d{2}/.test(s)) d = new Date(s);
+  // YYYY-MM-DD or datetime string
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) d = new Date(s.slice(0,10));
   // DD/MM/YYYY
   else if (/^\d{1,2}\/\d{1,2}\/\d{4}/.test(s)) {
     const [day,mon,yr] = s.split('/');
@@ -490,12 +490,12 @@ function processRaw(raw, sep) {
   const lines = raw.split('\n').filter(l => l.trim());
   if (lines.length < 2) { toast('Necesito al menos 2 filas (encabezados + datos)', 'err'); return; }
   const headers = lines[0].split(sep).map(h => h.replace(/"/g,'').trim().toLowerCase());
-  const ic = keys => { for (const k of keys) { const i = headers.findIndex(h => h.includes(k)); if (i >= 0) return i; } return -1; };
+  const ic = keys => { for (const k of keys) { const i = headers.findIndex(h => h.trim().includes(k)); if (i >= 0) return i; } return -1; };
   // Columnas fijas de la plantilla Luz Arcana
   const idx = {
-    dias_trans:  ic(['dias transcurridos','días transcurridos','dias trans']),
+    dias_trans:  ic(['días transcurridos','dias transcurridos','dias trans']),
     fecha_ins:   ic(['fecha de inscripcion','fecha inscripcion','inscripcion','fecha inicio']),
-    dias_cobro:  ic(['dias de cob','días de cob','dias de cobro','día de cobro','dia de cobro','cobro']),
+    dias_cobro:  ic(['dias de cobro','días de cobro','dias de cob','día de cobro','dia de cobro','cobro']),
     nombre:      ic(['nombre','name']),
     apellido:    ic(['apellido','lastname','last name']),
     correo:      ic(['correo','email','mail']),
@@ -546,7 +546,15 @@ function splitCSV(line, sep) {
   res.push(cur.trim());
   return res;
 }
-function cleanPhone(r) { return r ? r.replace(/\s+/g,'').replace(/[^\+\d]/g,'') : ''; }
+function cleanPhone(r) {
+  if (!r && r !== 0) return '';
+  let s = String(r).replace(/\s+/g,'').replace(/[^\+\d]/g,'');
+  // Si es número de 10 dígitos sin prefijo, agregar +521
+  if (/^\d{10}$/.test(s)) s = '+521' + s;
+  // Si empieza con 52 pero le falta el 1 del móvil
+  else if (/^52\d{10}$/.test(s)) s = '+' + s;
+  return s;
+}
 
 async function handleFile(file) {
   if (!file) return;
@@ -810,7 +818,7 @@ function closeFicha() { elId('fichaOverlay').classList.remove('show'); }
 
 // ══ PLANTILLA CSV ═════════════════════════════════════════════
 function downloadTemplate() {
-  const cols = 'Dias transcurridos,Fecha de inscripcion,Dias de cob,Nombre,Apellido,Correo,Pagina de procedencia,Whatsapp adicional,WhatsApp,estatus,Membresia,Notas';
+  const cols = 'Días transcurridos,Fecha de inscripcion,Dias de cobro,Nombre,Apellido,Correo,Pagina de procedencia,Whatsapp adicional,WhatsApp,estatus,Membresia,Notas';
   const ejemplo = ',15/01/2024,1,María,González,maria@gmail.com,Instagram,+5215512345678,+5215512345678,activo $197,,';
   const csv = cols + '\n' + ejemplo;
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
