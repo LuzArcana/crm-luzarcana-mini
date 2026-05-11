@@ -394,9 +394,8 @@ function formatDias(n) {
 // ══ LADAS ═════════════════════════════════════════════════════
 function getEstado(wa) {
   const d = wa.replace(/\D/g,'');
-  let n = d;
-  if (n.startsWith('521')) n = n.slice(3);
-  else if (n.startsWith('52')) n = n.slice(2);
+  // Quitar 52 del inicio, luego leer lada
+  const n = d.startsWith('52') ? d.slice(2) : d;
   return LADAS[n.slice(0,3)] || LADAS[n.slice(0,2)] || 'México';
 }
 function mailPrefix(m) {
@@ -548,24 +547,14 @@ function splitCSV(line, sep) {
 }
 function cleanPhone(r) {
   if (r === null || r === undefined || r === '') return '';
-  // Tomar solo el primer número si hay varios separados por coma
+  // Tomar primer número si hay varios separados por coma
   const raw = String(r).split(',')[0].trim();
-  // Quitar todo excepto + y dígitos
-  let s = raw.replace(/[^\+\d]/g, '');
-  if (!s) return '';
-  // Normalizar a formato +52XXXXXXXXXX
-  if (s.startsWith('+')) {
-    // ya tiene prefijo, solo limpiar
-  } else if (s.startsWith('521') && s.length === 13) {
-    s = '+' + s;                      // 5211234567890 → +5211234567890
-  } else if (s.startsWith('52') && s.length === 12) {
-    s = '+' + s + '';                 // 521234567890 (sin 1 móvil) — dejarlo
-  } else if (s.length === 10) {
-    s = '+521' + s;                   // 5512345678 → +5215512345678
-  } else if (s.length === 11 && s.startsWith('1')) {
-    s = '+52' + s;                    // 15512345678 → +5215512345678
-  }
-  return s;
+  // Solo dígitos
+  const digits = raw.replace(/\D/g, '');
+  if (!digits) return '';
+  // Siempre usar los últimos 10 dígitos — ignora +52, 521, 52, etc.
+  const last10 = digits.slice(-10);
+  return '52' + last10;  // formato para wa.me sin +
 }
 
 async function handleFile(file) {
@@ -769,8 +758,7 @@ function openWAClient(idx) {
   const c = clients[idx];
   if (!c.msg)      { toast('Genera el mensaje primero', 'err'); return; }
   if (!c.whatsapp) { toast('Este cliente no tiene teléfono', 'err'); return; }
-  const p = c.whatsapp.startsWith('+') ? c.whatsapp.slice(1) : c.whatsapp;
-  window.open('https://wa.me/' + p + '?text=' + encodeURIComponent(c.msg), '_blank');
+  window.open('https://wa.me/' + c.whatsapp + '?text=' + encodeURIComponent(c.msg), '_blank');
   // Auto-marcar como contactado
   c.contacted = true;
   updateStats();
@@ -984,8 +972,7 @@ function copyConvMsg() {
 function openConvWA() {
   const m = elId('convMsg').textContent;
   if (!convWAPhone) { toast('No encontré teléfono. Copia el mensaje manualmente.', 'err'); return; }
-  const p = convWAPhone.startsWith('+') ? convWAPhone.slice(1) : convWAPhone;
-  window.open('https://wa.me/' + p + '?text=' + encodeURIComponent(m), '_blank');
+  window.open('https://wa.me/' + convWAPhone + '?text=' + encodeURIComponent(m), '_blank');
 }
 </script>
 </body>
