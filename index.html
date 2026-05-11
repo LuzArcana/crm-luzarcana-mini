@@ -205,6 +205,7 @@ input[type=text]::placeholder{color:var(--muted)}
       <div class="welcome">
         <div class="wicon">✨</div>
         <p>Elige un mood arriba y luego carga tu lista de clientes</p>
+        <button onclick="downloadTemplate()" style="margin-top:10px;background:var(--card);border:1px solid var(--gold);color:var(--gold);border-radius:20px;padding:6px 16px;font-size:11px;font-weight:700;cursor:pointer;font-family:Lato,sans-serif">📥 Descargar plantilla CSV</button>
       </div>
       <div class="tabs">
         <button class="tab on" onclick="swtab('paste')">📋 Pegar</button>
@@ -490,16 +491,20 @@ function processRaw(raw, sep) {
   if (lines.length < 2) { toast('Necesito al menos 2 filas (encabezados + datos)', 'err'); return; }
   const headers = lines[0].split(sep).map(h => h.replace(/"/g,'').trim().toLowerCase());
   const ic = keys => { for (const k of keys) { const i = headers.findIndex(h => h.includes(k)); if (i >= 0) return i; } return -1; };
+  // Columnas fijas de la plantilla Luz Arcana
   const idx = {
+    dias_trans:  ic(['dias transcurridos','días transcurridos','dias trans']),
+    fecha_ins:   ic(['fecha de inscripcion','fecha inscripcion','inscripcion','fecha inicio']),
+    dias_cobro:  ic(['dias de cob','días de cob','dias de cobro','día de cobro','dia de cobro','cobro']),
     nombre:      ic(['nombre','name']),
     apellido:    ic(['apellido','lastname','last name']),
-    whatsapp:    ic(['whatsapp','tel','celular','movil','móvil','phone']),
     correo:      ic(['correo','email','mail']),
+    procedencia: ic(['pagina de procedencia','procedencia','pagina','fuente']),
+    wa_adicional:ic(['whatsapp adicional','wa adicional','tel adicional']),
+    whatsapp:    ic(['whatsapp','tel','celular','movil','móvil','phone']),
     estatus:     ic(['estatus','status','estado']),
     membresia:   ic(['membresia','membresía','tipo de membresia','tipo']),
-    dias_cobro:  ic(['dias de cobro','día de cobro','dia de cobro','dias de cob','cobro','día cobro']),
     notas:       ic(['notas','notes','nota']),
-    fecha_ins:   ic(['fecha de inscripcion','fecha inscripcion','inscripcion','fecha de alta','alta','fecha_ins','fecha inicio','inicio']),
   };
   clients = [];
   for (let i = 1; i < lines.length; i++) {
@@ -507,17 +512,22 @@ function processRaw(raw, sep) {
     const g = j => (j >= 0 && j < c.length) ? c[j].trim() : '';
     const nom = (g(idx.nombre) + ' ' + g(idx.apellido)).trim();
     if (!nom || nom.length < 2) continue;
+    const wa_main = cleanPhone(g(idx.whatsapp));
+    const wa_alt  = cleanPhone(g(idx.wa_adicional));
     clients.push({
-      nombre:    nom,
-      whatsapp:  cleanPhone(g(idx.whatsapp)),
-      correo:    g(idx.correo),
-      estatus:   g(idx.estatus) || 'activo',
-      membresia: g(idx.membresia),
-      dias_cobro:g(idx.dias_cobro),
-      notas:     g(idx.notas),
-      fecha_ins: g(idx.fecha_ins),
-      msg:       '',
-      contacted: false,
+      nombre:      nom,
+      whatsapp:    wa_main || wa_alt,   // usa adicional si el principal está vacío
+      wa_adicional:wa_alt,
+      correo:      g(idx.correo),
+      estatus:     g(idx.estatus) || 'activo',
+      membresia:   g(idx.membresia),
+      dias_cobro:  g(idx.dias_cobro),
+      dias_trans:  g(idx.dias_trans),
+      fecha_ins:   g(idx.fecha_ins),
+      procedencia: g(idx.procedencia),
+      notas:       g(idx.notas),
+      msg:         '',
+      contacted:   false,
     });
   }
   if (!clients.length) { toast('No encontré clientes. Revisa el formato.', 'err'); return; }
@@ -780,14 +790,15 @@ function openFicha(idx) {
   elId('fichaSt').innerHTML = '<span style="background:'+estatusColor+'22;color:'+estatusColor+';padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700">'+c.estatus+'</span>';
   const ins = diasConNosotros(c.fecha_ins);
   const fields = [
-    { l:'📅 Fecha de inscripción', v: ins ? ins.fecha : (c.fecha_ins || '—') },
-    { l:'💰 Precio mensual',       v: precioDeEstatus(c.estatus) || (c.membresia || '—') },
-    { l:'⏳ Tiempo con nosotros',  v: ins ? formatDias(ins.dias) : '—' },
+    { l:'📅 Inscripción',          v: ins ? ins.fecha : (c.fecha_ins || '—') },
+    { l:'⏳ Tiempo con nosotros',  v: ins ? formatDias(ins.dias) : (c.dias_trans ? c.dias_trans + ' días' : '—') },
     { l:'🗓 Día de cobro',         v: c.dias_cobro ? 'Día ' + c.dias_cobro + ' de cada mes' : '—' },
+    { l:'💰 Precio mensual',       v: precioDeEstatus(c.estatus) || '—' },
     { l:'📱 WhatsApp',             v: c.whatsapp  || '—' },
+    { l:'📱 WA adicional',         v: c.wa_adicional || '—' },
     { l:'📧 Correo',               v: c.correo    || '—' },
-    { l:'💳 Membresía',            v: c.membresia || '—' },
     { l:'🌍 Estado',               v: c.whatsapp ? getEstado(c.whatsapp) : '—' },
+    { l:'🔗 Procedencia',          v: c.procedencia || '—' },
     { l:'📝 Notas',                v: c.notas     || '—' },
   ];
   elId('fichaFields').innerHTML = fields.map(f =>
@@ -796,6 +807,19 @@ function openFicha(idx) {
   elId('fichaOverlay').classList.add('show');
 }
 function closeFicha() { elId('fichaOverlay').classList.remove('show'); }
+
+// ══ PLANTILLA CSV ═════════════════════════════════════════════
+function downloadTemplate() {
+  const cols = 'Dias transcurridos,Fecha de inscripcion,Dias de cob,Nombre,Apellido,Correo,Pagina de procedencia,Whatsapp adicional,WhatsApp,estatus,Membresia,Notas';
+  const ejemplo = ',15/01/2024,1,María,González,maria@gmail.com,Instagram,+5215512345678,+5215512345678,activo $197,,';
+  const csv = cols + '\n' + ejemplo;
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'plantilla_luz_arcana.csv';
+  a.click();
+  toast('Plantilla descargada 📥', 'ok');
+}
 
 // ══ CONTROLES ═════════════════════════════════════════════════
 function resetList() {
