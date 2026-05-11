@@ -547,12 +547,24 @@ function splitCSV(line, sep) {
   return res;
 }
 function cleanPhone(r) {
-  if (!r && r !== 0) return '';
-  let s = String(r).replace(/\s+/g,'').replace(/[^\+\d]/g,'');
-  // Si es número de 10 dígitos sin prefijo, agregar +521
-  if (/^\d{10}$/.test(s)) s = '+521' + s;
-  // Si empieza con 52 pero le falta el 1 del móvil
-  else if (/^52\d{10}$/.test(s)) s = '+' + s;
+  if (r === null || r === undefined || r === '') return '';
+  // Tomar solo el primer número si hay varios separados por coma
+  const raw = String(r).split(',')[0].trim();
+  // Quitar todo excepto + y dígitos
+  let s = raw.replace(/[^\+\d]/g, '');
+  if (!s) return '';
+  // Normalizar a formato +52XXXXXXXXXX
+  if (s.startsWith('+')) {
+    // ya tiene prefijo, solo limpiar
+  } else if (s.startsWith('521') && s.length === 13) {
+    s = '+' + s;                      // 5211234567890 → +5211234567890
+  } else if (s.startsWith('52') && s.length === 12) {
+    s = '+' + s + '';                 // 521234567890 (sin 1 móvil) — dejarlo
+  } else if (s.length === 10) {
+    s = '+521' + s;                   // 5512345678 → +5215512345678
+  } else if (s.length === 11 && s.startsWith('1')) {
+    s = '+52' + s;                    // 15512345678 → +5215512345678
+  }
   return s;
 }
 
