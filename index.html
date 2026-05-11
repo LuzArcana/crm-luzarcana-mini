@@ -72,6 +72,9 @@ header p{font-size:9px;color:var(--muted);letter-spacing:1.5px;margin-top:1px}
 .cbadge.permanente{background:#1f1a30;color:var(--vl)}
 .cbadge.embajador{background:#2a1f10;color:var(--gold)}
 .cbadge.default{background:var(--surface);color:var(--muted)}
+.cbadge.conflictiva{background:#2d1520;color:#e06090}
+.cbadge.prueba{background:#1a1f10;color:#a0c060}
+.cbadge.especial{background:#1a1820;color:#7090b0}
 .msg-loading{display:none;align-items:center;gap:6px;color:var(--muted);font-size:11px;padding:6px 0;margin-bottom:4px}
 .msg-loading.show{display:flex}
 .spinner{width:12px;height:12px;border:2px solid var(--border);border-top-color:var(--violet);border-radius:50%;animation:spin .6s linear infinite;flex-shrink:0}
@@ -350,6 +353,43 @@ function toast(msg, type='') {
   clearTimeout(t._t); t._t = setTimeout(() => t.className = 'toast', 2800);
 }
 
+// ══ FECHA / DÍAS ══════════════════════════════════════════════
+function diasConNosotros(fechaStr) {
+  if (!fechaStr) return null;
+  // Intentar parsear varios formatos: DD/MM/YYYY, YYYY-MM-DD, MM/DD/YYYY
+  let d = null;
+  const s = fechaStr.trim();
+  // YYYY-MM-DD
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) d = new Date(s);
+  // DD/MM/YYYY
+  else if (/^\d{1,2}\/\d{1,2}\/\d{4}/.test(s)) {
+    const [day,mon,yr] = s.split('/');
+    d = new Date(parseInt(yr), parseInt(mon)-1, parseInt(day));
+  }
+  // MM/DD/YYYY
+  else if (/^\d{1,2}-\d{1,2}-\d{4}/.test(s)) {
+    const [day,mon,yr] = s.split('-');
+    d = new Date(parseInt(yr), parseInt(mon)-1, parseInt(day));
+  }
+  // Excel serial number
+  else if (/^\d{4,5}$/.test(s)) {
+    const serial = parseInt(s);
+    d = new Date((serial - 25569) * 86400 * 1000);
+  }
+  if (!d || isNaN(d.getTime())) return null;
+  const hoy = new Date();
+  const diff = Math.floor((hoy - d) / (1000 * 60 * 60 * 24));
+  return { fecha: d.toLocaleDateString('es-MX', {day:'numeric',month:'long',year:'numeric'}), dias: diff };
+}
+
+function formatDias(n) {
+  if (n === null) return '—';
+  if (n < 30)  return n + ' días';
+  if (n < 365) return Math.floor(n/30) + ' meses y ' + (n%30) + ' días';
+  const yrs = Math.floor(n/365); const rest = Math.floor((n%365)/30);
+  return yrs + (yrs===1?' año':' años') + (rest>0?' y '+rest+' meses':'');
+}
+
 // ══ LADAS ═════════════════════════════════════════════════════
 function getEstado(wa) {
   const d = wa.replace(/\D/g,'');
@@ -415,6 +455,12 @@ function getMoodLabel(mood) {
 // ══ TOGGLES ════════════════════════════════════════════════════
 function togOpt(k) { opts[k] = !opts[k]; elId('tog-' + k).classList.toggle('on', opts[k]); }
 
+// ══ PRECIO DESDE ESTATUS ══════════════════════════════════════
+function precioDeEstatus(est) {
+  const m = est.match(/\$?\s*(\d{2,4})/);
+  return m ? '$' + m[1] + '/mes' : null;
+}
+
 // ══ TABS ═══════════════════════════════════════════════════════
 function swtab(n) {
   document.querySelectorAll('#loadScreen .tab').forEach((b,i) => b.classList.toggle('on', ['paste','file','sheets'][i] === n));
@@ -445,14 +491,15 @@ function processRaw(raw, sep) {
   const headers = lines[0].split(sep).map(h => h.replace(/"/g,'').trim().toLowerCase());
   const ic = keys => { for (const k of keys) { const i = headers.findIndex(h => h.includes(k)); if (i >= 0) return i; } return -1; };
   const idx = {
-    nombre:    ic(['nombre','name']),
-    apellido:  ic(['apellido','lastname','last name']),
-    whatsapp:  ic(['whatsapp','tel','celular','movil','móvil','phone']),
-    correo:    ic(['correo','email','mail']),
-    estatus:   ic(['estatus','status','estado']),
-    membresia: ic(['membresia','membresía','tipo de membresia','tipo']),
-    dias_cobro:ic(['dias de cobro','día de cobro','dia de cobro','cobro','día cobro']),
-    notas:     ic(['notas','notes','nota']),
+    nombre:      ic(['nombre','name']),
+    apellido:    ic(['apellido','lastname','last name']),
+    whatsapp:    ic(['whatsapp','tel','celular','movil','móvil','phone']),
+    correo:      ic(['correo','email','mail']),
+    estatus:     ic(['estatus','status','estado']),
+    membresia:   ic(['membresia','membresía','tipo de membresia','tipo']),
+    dias_cobro:  ic(['dias de cobro','día de cobro','dia de cobro','dias de cob','cobro','día cobro']),
+    notas:       ic(['notas','notes','nota']),
+    fecha_ins:   ic(['fecha de inscripcion','fecha inscripcion','inscripcion','fecha de alta','alta','fecha_ins','fecha inicio','inicio']),
   };
   clients = [];
   for (let i = 1; i < lines.length; i++) {
@@ -468,6 +515,7 @@ function processRaw(raw, sep) {
       membresia: g(idx.membresia),
       dias_cobro:g(idx.dias_cobro),
       notas:     g(idx.notas),
+      fecha_ins: g(idx.fecha_ins),
       msg:       '',
       contacted: false,
     });
@@ -569,11 +617,15 @@ function renderList() {
     card.className = 'ccard' + (c.contacted ? ' sent' : '');
     const ini = c.nombre.charAt(0).toUpperCase();
     const col = aColor(c.nombre);
-    const bc = c.estatus.toLowerCase().includes('permanente') ? 'permanente'
-             : c.estatus.toLowerCase().includes('embajador')  ? 'embajador'
-             : c.estatus.toLowerCase().includes('beca')       ? 'beca'
-             : c.estatus.toLowerCase().includes('activo')     ? 'activo'
-             : c.estatus.toLowerCase().includes('revocado')   ? 'revocado' : 'default';
+    const _es = c.estatus.toLowerCase();
+    const bc = _es.includes('permanente')                    ? 'permanente'
+             : _es.includes('embajador')                     ? 'embajador'
+             : _es.includes('beca')                          ? 'beca'
+             : _es.includes('conflictiva')                   ? 'conflictiva'
+             : _es.includes('prueba')                        ? 'prueba'
+             : (_es.includes('no aceptad') || _es==='solo sigilos' || _es==='solo tarot' || _es.includes('domiciliado') && !_es.includes('activo')) ? 'especial'
+             : _es.includes('activo')                        ? 'activo'
+             : _es.includes('revocado')                      ? 'revocado' : 'default';
     const msgId   = 'msg' + idx;
     const loadId  = 'ld' + idx;
     const waId    = 'wa' + idx;
@@ -585,7 +637,7 @@ function renderList() {
           <div class="cname" onclick="openFicha(${idx})">${c.nombre}</div>
           <div class="cmeta">${c.whatsapp||'Sin tel'}${c.membresia?' · '+c.membresia:''}${c.dias_cobro?' · Día '+c.dias_cobro:''}</div>
         </div>
-        <span class="cbadge ${bc}">${c.estatus.split(' ')[0]||'—'}</span>
+        <span class="cbadge ${bc}" title="${c.estatus}">${c.estatus.length>12?c.estatus.slice(0,11)+'…':c.estatus||'—'}</span>
       </div>
       <div class="msg-loading" id="${loadId}"><div class="spinner"></div>Generando mensaje…</div>
       <div class="msg-preview${c.msg?' show':''}" id="${msgId}">${c.msg||''}</div>
@@ -717,14 +769,26 @@ function openFicha(idx) {
   elId('fichaAv').style.background = col;
   elId('fichaAv').textContent = c.nombre.charAt(0).toUpperCase();
   elId('fichaNom').textContent = c.nombre;
-  elId('fichaSt').textContent = c.estatus;
+  const _ef = c.estatus.toLowerCase();
+  const estatusColor = _ef.includes('permanente')   ? '#9b7de0'
+    : _ef.includes('embajador')                     ? '#c9a84c'
+    : _ef.includes('beca')                          ? '#7a9fe0'
+    : _ef.includes('conflictiva')                   ? '#e06090'
+    : _ef.includes('prueba')                        ? '#a0c060'
+    : _ef.includes('activo')                        ? '#4caf7c'
+    : _ef.includes('revocado')                      ? '#cf6679' : '#8a7fa0';
+  elId('fichaSt').innerHTML = '<span style="background:'+estatusColor+'22;color:'+estatusColor+';padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700">'+c.estatus+'</span>';
+  const ins = diasConNosotros(c.fecha_ins);
   const fields = [
-    { l:'📱 WhatsApp',   v: c.whatsapp  || '—' },
-    { l:'📧 Correo',     v: c.correo    || '—' },
-    { l:'💳 Membresía',  v: c.membresia || '—' },
-    { l:'📅 Día cobro',  v: c.dias_cobro ? 'Día ' + c.dias_cobro : '—' },
-    { l:'🌍 Estado',     v: c.whatsapp ? getEstado(c.whatsapp) : '—' },
-    { l:'📝 Notas',      v: c.notas     || '—' },
+    { l:'📅 Fecha de inscripción', v: ins ? ins.fecha : (c.fecha_ins || '—') },
+    { l:'💰 Precio mensual',       v: precioDeEstatus(c.estatus) || (c.membresia || '—') },
+    { l:'⏳ Tiempo con nosotros',  v: ins ? formatDias(ins.dias) : '—' },
+    { l:'🗓 Día de cobro',         v: c.dias_cobro ? 'Día ' + c.dias_cobro + ' de cada mes' : '—' },
+    { l:'📱 WhatsApp',             v: c.whatsapp  || '—' },
+    { l:'📧 Correo',               v: c.correo    || '—' },
+    { l:'💳 Membresía',            v: c.membresia || '—' },
+    { l:'🌍 Estado',               v: c.whatsapp ? getEstado(c.whatsapp) : '—' },
+    { l:'📝 Notas',                v: c.notas     || '—' },
   ];
   elId('fichaFields').innerHTML = fields.map(f =>
     `<div class="modal-field"><div class="lbl">${f.l}</div><div class="val">${f.v}</div></div>`
