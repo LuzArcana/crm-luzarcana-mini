@@ -482,7 +482,8 @@ function swConv(n) {
 function parsePaste() {
   const r = elId('pasteArea').value.trim();
   if (!r) { toast('Pega tu lista primero', 'err'); return; }
-  processRaw(r, r.includes('\t') ? '\t' : ',');
+  const sep = r.includes('\t') ? '\t' : r.split('\n')[0].includes(';') ? ';' : ',';
+  processRaw(r, sep);
 }
 
 function processXLSX(ws) {
@@ -541,7 +542,7 @@ function processXLSX(ws) {
 function processRaw(raw, sep) {
   const lines = raw.split('\n').filter(l => l.trim());
   if (lines.length < 2) { toast('Necesito al menos 2 filas (encabezados + datos)', 'err'); return; }
-  const headers = lines[0].split(sep).map(h => h.replace(/"/g,'').trim().toLowerCase());
+  const headers = lines[0].replace(/^\uFEFF/,'').split(sep).map(h => h.replace(/"/g,'').trim().toLowerCase());
   const ic = keys => { for (const k of keys) { const i = headers.findIndex(h => h.trim().includes(k)); if (i >= 0) return i; } return -1; };
   // Columnas fijas de la plantilla Luz Arcana
   const idx = {
@@ -553,7 +554,7 @@ function processRaw(raw, sep) {
     correo:      ic(['correo','email','mail']),
     procedencia: ic(['pagina de procedencia','procedencia','pagina','fuente']),
     wa_adicional:ic(['whatsapp adicional','wa adicional','tel adicional']),
-    whatsapp:    ic(['whatsapp','tel','celular','movil','móvil','phone']),
+    whatsapp:    headers.findIndex(h => h.trim().includes('whatsapp') && !h.includes('adicional')),
     estatus:     ic(['estatus','status','estado']),
     membresia:   ic(['membresia','membresía','tipo de membresia','tipo']),
     notas:       ic(['notas','notes','nota']),
@@ -617,7 +618,8 @@ async function handleFile(file) {
   try {
     if (file.name.toLowerCase().endsWith('.csv')) {
       const t = await file.text();
-      processRaw(t, t.includes('\t') ? '\t' : ',');
+      const sep = t.includes('\t') ? '\t' : t.split('\n')[0].includes(';') ? ';' : ',';
+      processRaw(t, sep);
       st.textContent = '';
     } else {
       if (!window.XLSX) {
