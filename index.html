@@ -485,6 +485,59 @@ function parsePaste() {
   processRaw(r, r.includes('\t') ? '\t' : ',');
 }
 
+function processXLSX(ws) {
+  const ref = ws['!ref'];
+  if (!ref) { toast('Hoja vacía', 'err'); return; }
+  const data = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false, dateNF: 'DD/MM/YYYY' });
+  if (data.length < 2) { toast('Necesito al menos 2 filas', 'err'); return; }
+  // Find header row (first non-empty row)
+  let hRowIdx = 0;
+  for (let i = 0; i < Math.min(5, data.length); i++) {
+    if (data[i].some(c => c && String(c).trim())) { hRowIdx = i; break; }
+  }
+  const headers = data[hRowIdx].map(h => String(h||'').trim().toLowerCase());
+  const ic = keys => { for (const k of keys) { const i = headers.findIndex(h => h.includes(k)); if (i >= 0) return i; } return -1; };
+  const idx = {
+    dias_trans:  ic(['días transcurridos','dias transcurridos']),
+    fecha_ins:   ic(['fecha de inscripcion','inscripcion']),
+    dias_cobro:  ic(['dias de cobro','día de cobro','dias de cob']),
+    nombre:      ic(['nombre']),
+    apellido:    ic(['apellido']),
+    correo:      ic(['correo','email']),
+    procedencia: ic(['pagina de procedencia','procedencia']),
+    wa_adicional:ic(['whatsapp adicional','wa adicional']),
+    whatsapp:    ic(['whatsapp']),  // catches "whatsapp " too after trim
+    estatus:     ic(['estatus','status']),
+    membresia:   ic(['membresia','membresía']),
+    notas:       ic(['notas']),
+  };
+  clients = [];
+  for (let i = hRowIdx + 1; i < data.length; i++) {
+    const row = data[i];
+    const g = j => (j >= 0 && j < row.length && row[j] !== null && row[j] !== undefined) ? String(row[j]).trim() : '';
+    const nom = (g(idx.nombre) + ' ' + g(idx.apellido)).trim();
+    if (!nom || nom.length < 2) continue;
+    const wa_main = cleanPhone(g(idx.whatsapp));
+    const wa_alt  = cleanPhone(g(idx.wa_adicional));
+    clients.push({
+      nombre:      nom,
+      whatsapp:    wa_main || wa_alt,
+      wa_adicional:wa_alt,
+      correo:      g(idx.correo),
+      estatus:     g(idx.estatus) || 'activo',
+      membresia:   g(idx.membresia),
+      dias_cobro:  g(idx.dias_cobro),
+      dias_trans:  g(idx.dias_trans),
+      fecha_ins:   g(idx.fecha_ins),
+      procedencia: g(idx.procedencia),
+      notas:       g(idx.notas),
+      msg: '', contacted: false,
+    });
+  }
+  if (!clients.length) { toast('No encontré clientes. Revisa el archivo.', 'err'); return; }
+  afterLoad();
+}
+
 function processRaw(raw, sep) {
   const lines = raw.split('\n').filter(l => l.trim());
   if (lines.length < 2) { toast('Necesito al menos 2 filas (encabezados + datos)', 'err'); return; }
@@ -574,7 +627,7 @@ async function handleFile(file) {
       const buf = await file.arrayBuffer();
       const wb = XLSX.read(buf, { type: 'array' });
       const ws = wb.Sheets[wb.SheetNames[0]];
-      processRaw(XLSX.utils.sheet_to_csv(ws), ',');
+      processXLSX(ws);
       st.textContent = '';
     }
   } catch(e) {
