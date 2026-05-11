@@ -156,7 +156,7 @@ input[type=text]::placeholder{color:var(--muted)}
     </div>
     <div class="moods-wrap">
       <div class="moods-grid">
-        <button class="mood-btn" onclick="pickMood(this,'cobranza')"><span class="micon">💸</span><div class="mname">Cobranza</div><div class="mdesc">Recordatorio pago</div></button>
+        <button class="mood-btn" onclick="toggleCobranzaMenu(this)"><span class="micon">💸</span><div class="mname">Cobranza</div><div class="mdesc">Toca para elegir tipo</div></button>
         <button class="mood-btn" onclick="pickMood(this,'bienvenida')"><span class="micon">🌟</span><div class="mname">Bienvenida</div><div class="mdesc">Cliente nuevo</div></button>
         <button class="mood-btn" onclick="pickMood(this,'reactivacion')"><span class="micon">🔥</span><div class="mname">Reactivación</div><div class="mdesc">Invitar a volver</div></button>
         <button class="mood-btn" onclick="pickMood(this,'levanta_muertos')"><span class="micon">💀</span><div class="mname">Levanta muertos</div><div class="mdesc">Sin actividad</div></button>
@@ -164,6 +164,28 @@ input[type=text]::placeholder{color:var(--muted)}
         <button class="mood-btn" onclick="pickMood(this,'anualidad')"><span class="micon">🎉</span><div class="mname">Anualidad</div><div class="mdesc">$3,500 / año</div></button>
         <button class="mood-btn" onclick="pickMood(this,'promo_curso')"><span class="micon">📚</span><div class="mname">Promo curso</div><div class="mdesc">Curso específico</div></button>
         <button class="mood-btn" onclick="pickMood(this,'complementario')"><span class="micon">🎁</span><div class="mname">Complementario</div><div class="mdesc">Agrega otro</div></button>
+      </div>
+      <!-- SUBMENU COBRANZA -->
+      <div id="cobranzaMenu" style="display:none;background:var(--surface);border:1px solid var(--gold);border-radius:10px;padding:10px;margin-bottom:8px;display:none">
+        <div style="font-size:9px;color:var(--gold);letter-spacing:1px;margin-bottom:8px;font-family:Cinzel,serif">💸 ELIGE EL TIPO DE COBRANZA</div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <button class="cob-opt" onclick="pickCobranza('normal')" style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 12px;text-align:left;cursor:pointer;color:var(--text);font-family:Lato,sans-serif;transition:border-color .2s">
+            <div style="font-size:12px;font-weight:700">💸 Cobranza normal</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:2px">Recordatorio de mensualidad</div>
+          </button>
+          <button class="cob-opt" onclick="pickCobranza('migracion')" style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 12px;text-align:left;cursor:pointer;color:var(--text);font-family:Lato,sans-serif;transition:border-color .2s">
+            <div style="font-size:12px;font-weight:700">⭐ Migración a permanente</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:2px">Ya no habrá mensualidades — descuento especial</div>
+            <div style="display:flex;align-items:center;gap:6px;margin-top:6px">
+              <span style="font-size:10px;color:var(--gold)">Descuento: $</span>
+              <input type="number" id="descuentoMigracion" placeholder="ej. 100" onclick="event.stopPropagation()" style="width:80px;background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;padding:4px 8px;outline:none">
+            </div>
+          </button>
+          <button class="cob-opt" onclick="pickCobranza('anualidad_viejitos')" style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 12px;text-align:left;cursor:pointer;color:var(--text);font-family:Lato,sans-serif;transition:border-color .2s">
+            <div style="font-size:12px;font-weight:700">🎉 Anualidad (alumnos antiguos)</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:2px">Un solo pago = acceso permanente (precio x 10 meses)</div>
+          </button>
+        </div>
       </div>
       <div class="mood-free">
         <label>✦ MOOD LIBRE</label>
@@ -242,19 +264,14 @@ input[type=text]::placeholder{color:var(--muted)}
 <div class="scroll-section">
   <div class="slabel">📢 Aviso comunitario de cobros</div>
   <p style="font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:12px">Genera el aviso en formato privado:<br><strong style="color:var(--text)">Nombre · Estado · mail@</strong></p>
-  <div class="tabs">
-    <button class="tab on" onclick="swAviso('paste')">📋 Pegar lista</button>
-    <button class="tab" onclick="swAviso('bd')">⚡ Filtrar clientes</button>
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:11px;color:var(--muted)">
+    Usa la lista que ya cargaste en la pestaña Mensajes. Filtra por día de cobro o usa todos.
   </div>
-  <div class="tab-panel on" id="aviso-paste">
-    <textarea id="avisoText" placeholder="Nombre, WhatsApp, Correo (un cliente por línea o pega columnas desde Sheets)"></textarea>
+  <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
+    <input type="text" id="avisoDia" placeholder="Día de cobro (ej. 10) — deja vacío para todos" style="flex:1">
+    <button class="btn btn-outline" onclick="filtrarBD()" style="width:auto;padding:9px 14px;margin-top:0;white-space:nowrap">Filtrar</button>
   </div>
-  <div class="tab-panel" id="aviso-bd">
-    <p class="hint" style="margin-bottom:6px">Filtra de la lista cargada por día de cobro:</p>
-    <input type="text" id="avisoDia" placeholder="ej. 10">
-    <button class="btn btn-outline" onclick="filtrarBD()" style="margin-top:6px">Filtrar del día</button>
-    <p class="hint" id="avisoBDInfo" style="margin-top:6px"></p>
-  </div>
+  <p class="hint" id="avisoBDInfo" style="margin-bottom:8px"></p>
   <div style="margin-top:10px">
     <div style="font-size:10px;color:var(--gold);letter-spacing:1px;margin-bottom:6px">FECHA DEL AVISO</div>
     <input type="text" id="avisoFecha" placeholder="ej. 10 de mayo de 2026">
@@ -420,6 +437,34 @@ function togglePanel() { elId('topPanel').classList.toggle('collapsed'); }
 function openPanel()   { elId('topPanel').classList.remove('collapsed'); }
 function closePanel()  { elId('topPanel').classList.add('collapsed'); }
 
+function toggleCobranzaMenu(btn) {
+  const menu = elId('cobranzaMenu');
+  const isOpen = menu.style.display === 'block';
+  // Close if open, open if closed
+  if (isOpen) {
+    menu.style.display = 'none';
+    btn.classList.remove('on');
+  } else {
+    menu.style.display = 'block';
+    document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('on'));
+    btn.classList.add('on');
+  }
+}
+
+function pickCobranza(tipo) {
+  elId('cobranzaMenu').style.display = 'none';
+  selectedMood = 'cobranza_' + tipo;
+  const labels = {
+    normal:            '💸 Cobranza normal',
+    migracion:         '⭐ Cobranza migración permanente',
+    anualidad_viejitos:'🎉 Cobranza anualidad antiguos',
+  };
+  elId('panelTitle').textContent = '🎭 ' + labels[tipo] + ' · toca para cambiar';
+  closePanel();
+  document.querySelectorAll('.cob-opt').forEach(b => b.style.borderColor = 'var(--border)');
+  event.currentTarget.style.borderColor = 'var(--gold)';
+}
+
 function pickMood(btn, mood) {
   document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('on'));
   btn.classList.add('on');
@@ -441,7 +486,10 @@ function getMoodLabel(mood) {
   if (!mood) return '(sin mood)';
   if (mood.startsWith('custom:')) return mood.replace('custom:','').trim();
   return {
-    cobranza:      'Cobranza — recordatorio amable de pago pendiente',
+    cobranza:             'Cobranza — recordatorio amable de pago pendiente',
+    cobranza_normal:      'Cobranza — recordatorio amable de mensualidad pendiente',
+    cobranza_migracion:   'Cobranza migración a permanente — ya no habrá mensualidades, tenemos un descuento especial para ti',
+    cobranza_anualidad_viejitos: 'Cobranza anualidad alumnos antiguos — con un solo pago accedes para siempre, precio especial calculado x10 meses',
     bienvenida:    'Bienvenida — cliente nuevo entrando a la academia',
     reactivacion:  'Reactivación — cliente que dejó de pagar, invitarlo a volver',
     levanta_muertos:'Levanta muertos — sin actividad larga, tono muy personal y emotivo',
@@ -758,6 +806,24 @@ async function genForClient(idx) {
   if (msgEl)  { msgEl.classList.remove('show'); }
   const v = opts.antispam ? Math.floor(Math.random() * 3) + 1 : 1;
   const ml = getMoodLabel(selectedMood);
+  // Calcular precio anualidad si aplica
+  let extra_context = '';
+  if (selectedMood === 'cobranza_migracion') {
+    const desc = elId('descuentoMigracion')?.value || '';
+    extra_context = desc ? `\nEl descuento especial para migración es de $${desc} MXN. Menciona este descuento en el mensaje.` : '\nMenciona que hay un descuento especial disponible (el alumno debe preguntar el monto).';
+  }
+  if (selectedMood === 'cobranza_anualidad_viejitos') {
+    const precio = precioDeEstatus(c.estatus);
+    if (precio) {
+      const monto = parseInt(precio.replace(/[^\d]/g,''));
+      const anualidad = monto * 10;
+      extra_context = `\nEl precio de anualidad para este alumno es $${anualidad} MXN (su mensualidad de $${monto} x 10 meses). Menciona este precio específico en el mensaje.`;
+    }
+  }
+  if (selectedMood === 'cobranza_migracion') {
+    extra_context += '\nExplica que la academia está migrando a modelo de acceso permanente y que ya no habrá cobros mensuales. Este es el momento de asegurar su lugar con un descuento especial.';
+  }
+
   const prompt = `Eres el asistente de mensajes de la Academia Luz Arcana, academia mexicana de cursos espirituales y esotéricos (Tarot, Sigilos, Runas, Péndulo, Astrología, Numerología, Herbolaria, Cuarzos, Velas, Yoga, Mindfulness, Ayurveda, Jardinería, Magia Natural y más).
 
 Escribe un mensaje de WhatsApp para este cliente:
@@ -767,7 +833,7 @@ Escribe un mensaje de WhatsApp para este cliente:
 - Día de cobro: ${c.dias_cobro||'no especificado'}
 - Notas: ${c.notas||'ninguna'}
 
-Mood / intención: ${ml}
+Mood / intención: ${ml}${extra_context}
 
 Instrucciones estrictas:
 - Escribe SOLO el cuerpo del mensaje, sin comillas ni explicaciones
@@ -912,37 +978,26 @@ function resetContacted() {
 
 // ══ AVISO COMUNITARIO ══════════════════════════════════════════
 function filtrarBD() {
+  if (!clients.length) { toast('Primero carga la lista en la pestaña Mensajes', 'err'); return; }
   const dia = elId('avisoDia').value.trim();
-  if (!dia) { toast('Escribe un día', 'err'); return; }
-  if (!clients.length) { toast('Carga primero la lista de clientes', 'err'); return; }
-  const found = clients.filter(c => c.dias_cobro === dia && !c.contacted);
-  elId('avisoBDInfo').textContent = found.length + ' clientes con día ' + dia + ' sin contactar.';
-  elId('avisoText').value = ['Nombre\tWhatsApp\tCorreo', ...found.map(c => c.nombre + '\t' + c.whatsapp + '\t' + c.correo)].join('\n');
-  swAviso('paste');
-  toast(found.length + ' filtrados ✓', 'ok');
+  const found = dia
+    ? clients.filter(c => c.dias_cobro === dia)
+    : [...clients];
+  elId('avisoBDInfo').textContent = found.length + ' clientes' + (dia ? ' con día ' + dia : ' en total') + '.';
+  // Store for generarAviso
+  window._avisoClients = found;
+  toast(found.length + ' listos para aviso ✓', 'ok');
 }
 
 function generarAviso() {
-  const raw   = elId('avisoText').value.trim();
   const fecha = elId('avisoFecha').value.trim() || 'próximo día de cobro';
-  if (!raw) { toast('Pega la lista primero', 'err'); return; }
-  const lines = raw.split('\n').filter(l => l.trim());
-  const sep   = lines[0].includes('\t') ? '\t' : ',';
-  const hasH  = lines[0].toLowerCase().includes('nombre') || lines[0].toLowerCase().includes('name');
-  const data  = hasH ? lines.slice(1) : lines;
-  const h     = hasH ? lines[0].split(sep).map(x => x.toLowerCase().trim()) : [];
-  const iN = Math.max(h.findIndex(x => x.includes('nombre') || x.includes('name')), 0);
-  const iW = h.findIndex(x => x.includes('whatsapp') || x.includes('tel') || x.includes('celular')); const iWf = iW < 0 ? 1 : iW;
-  const iE = h.findIndex(x => x.includes('correo') || x.includes('email')); const iEf = iE < 0 ? 2 : iE;
-  const entries = data.map(l => {
-    const c = l.split(sep).map(x => x.replace(/"/g,'').trim());
-    const nom = c[iN] || '';
-    const wa  = c[iWf] || '';
-    const mail= c[iEf] || '';
-    if (!nom) return null;
-    return firstName(nom) + ' - ' + (wa ? getEstado(wa) : 'México') + ' - ' + mailPrefix(mail);
+  // Use filtered clients or all clients
+  const source = window._avisoClients || clients;
+  if (!source.length) { toast('Filtra primero la lista (botón Filtrar)', 'err'); return; }
+  const entries = source.map(c => {
+    return firstName(c.nombre) + ' - ' + (c.whatsapp ? getEstado(c.whatsapp) : 'México') + ' - ' + mailPrefix(c.correo);
   }).filter(Boolean);
-  if (!entries.length) { toast('No pude leer los datos', 'err'); return; }
+  if (!entries.length) { toast('No hay datos para generar el aviso', 'err'); return; }
   const msg = `*Lista de pagos pendientes para el ${fecha}:*\n\n` + entries.join('\n')
     + `\n\n_Este recordatorio protege tu privacidad. Solo aparece tu nombre, estado y el inicio de tu correo._\n_Si no quieres aparecer:_\n1. Paga anticipado 😅\n2. Avísanos para coordinar\n\n¡Gracias por su comprensión! 🙏✨\n*Equipo Luz Arcana*`;
   elId('avisoMsg').textContent = msg;
