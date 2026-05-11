@@ -506,7 +506,7 @@ function processXLSX(ws) {
     correo:      ic(['correo','email']),
     procedencia: ic(['pagina de procedencia','procedencia']),
     wa_adicional:ic(['whatsapp adicional','wa adicional']),
-    whatsapp:    ic(['whatsapp']),  // catches "whatsapp " too after trim
+    whatsapp:    headers.findIndex(h => h.trim().includes('whatsapp') && !h.includes('adicional')),
     estatus:     ic(['estatus','status']),
     membresia:   ic(['membresia','membresía']),
     notas:       ic(['notas']),
