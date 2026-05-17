@@ -89,6 +89,13 @@ header p{font-size:9px;color:var(--muted);letter-spacing:1.5px;margin-top:1px}
 .cbt.wa.off{border-color:var(--border);color:var(--muted);cursor:not-allowed;opacity:.4}
 .cbt.cp:hover{border-color:var(--gold);color:var(--gold)}
 .cbt.chk.done{border-color:var(--green);color:var(--green);background:#0d1f14}
+
+/* ── AUTO-LOAD SCREEN ── */
+.autoload-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:12px;padding:24px}
+.autoload-spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite}
+.autoload-txt{font-size:12px;color:var(--muted);text-align:center;line-height:1.6}
+.autoload-txt b{color:var(--gold)}
+
 .load-screen{display:flex;flex-direction:column;padding:16px;gap:10px;overflow-y:auto;flex:1}
 .load-screen .welcome{text-align:center;padding:8px 0 4px}
 .load-screen .welcome .wicon{font-size:32px;margin-bottom:6px}
@@ -170,7 +177,6 @@ input[type=text]::placeholder{color:var(--muted)}
         <label>✦ MOOD LIBRE</label>
         <input type="text" id="customMood" placeholder="ej. Promo Día de Muertos, Oferta relámpago…" oninput="pickCustomMood()">
       </div>
-      <!-- CAMPO PROMO CURSO -->
       <div id="promoCursoBox" style="display:none;background:var(--card);border:1px solid var(--violet);border-radius:10px;padding:10px 12px;margin-top:6px">
         <div style="font-size:9px;color:var(--vl);letter-spacing:1px;margin-bottom:6px;font-family:Cinzel,serif">📚 INFO DEL CURSO A PROMOCIONAR</div>
         <input type="text" id="promoCursoNombre" placeholder="Nombre del curso (ej. Tarot Avanzado)" style="margin-bottom:6px">
@@ -191,8 +197,9 @@ input[type=text]::placeholder{color:var(--muted)}
 
   <!-- BARRA CONTROL (visible solo con lista cargada) -->
   <div class="ctrl-bar" id="ctrlBar">
-    <button class="ctrl-btn danger" onclick="resetList()">🗑 Cambiar lista</button>
-    <button class="ctrl-btn" onclick="resetMsgs()">🔄 Borrar mensajes</button>
+    <button class="ctrl-btn danger" onclick="resetList()">🗑 Otra BD</button>
+    <button class="ctrl-btn" onclick="reloadActivos()">🔄 Recargar Activos</button>
+    <button class="ctrl-btn" onclick="resetMsgs()">🗒 Borrar mensajes</button>
     <button class="ctrl-btn" onclick="resetContacted()">☐ Resetear enviados</button>
     <button class="ctrl-btn accent" onclick="openPanel()">🎭 Cambiar mood</button>
   </div>
@@ -207,12 +214,19 @@ input[type=text]::placeholder{color:var(--muted)}
   <!-- PANTALLA CARGA / LISTA -->
   <div class="list-area" id="listArea">
 
-    <!-- Pantalla inicial de carga -->
-    <div class="load-screen" id="loadScreen">
+    <!-- Auto-carga inicial -->
+    <div class="autoload-screen" id="autoloadScreen">
+      <div class="autoload-spinner"></div>
+      <div class="autoload-txt">Cargando alumnos activos<br><b>Luz Arcana · Base de Alumnos</b></div>
+    </div>
+
+    <!-- Pantalla manual (si falla auto o usuario quiere otra BD) -->
+    <div class="load-screen" id="loadScreen" style="display:none">
       <div class="welcome">
         <div class="wicon">✨</div>
-        <p>Elige un mood arriba y luego carga tu lista de clientes</p>
-        <button onclick="downloadTemplate()" style="margin-top:10px;background:var(--card);border:1px solid var(--gold);color:var(--gold);border-radius:20px;padding:6px 16px;font-size:11px;font-weight:700;cursor:pointer;font-family:Lato,sans-serif">📥 Descargar plantilla CSV</button>
+        <p>Carga otra base de datos o pega una lista manual</p>
+        <button onclick="reloadActivos()" style="margin-top:10px;background:var(--card);border:1px solid var(--gold);color:var(--gold);border-radius:20px;padding:6px 16px;font-size:11px;font-weight:700;cursor:pointer;font-family:Lato,sans-serif">↩ Volver a Activos</button>
+        <button onclick="downloadTemplate()" style="margin-top:6px;background:var(--card);border:1px solid var(--border);color:var(--muted);border-radius:20px;padding:6px 16px;font-size:11px;font-weight:700;cursor:pointer;font-family:Lato,sans-serif">📥 Plantilla CSV</button>
       </div>
       <div class="tabs">
         <button class="tab on" onclick="swtab('paste')">📋 Pegar</button>
@@ -220,7 +234,7 @@ input[type=text]::placeholder{color:var(--muted)}
         <button class="tab" onclick="swtab('sheets')">🔗 Sheets</button>
       </div>
       <div class="tab-panel on" id="tab-paste">
-        <textarea id="pasteArea" placeholder="Pega aquí tu lista desde Excel o Sheets (incluye fila de encabezados).&#10;Columnas detectadas: Nombre, Apellido, WhatsApp, Correo, Estatus, Membresía, Día de cobro, Notas"></textarea>
+        <textarea id="pasteArea" placeholder="Pega aquí tu lista desde Excel o Sheets (incluye fila de encabezados)."></textarea>
         <button class="btn" onclick="parsePaste()" style="margin-top:8px">⚡ Cargar lista</button>
       </div>
       <div class="tab-panel" id="tab-file">
@@ -239,7 +253,7 @@ input[type=text]::placeholder{color:var(--muted)}
       </div>
     </div>
 
-    <!-- Lista de clientes (aparece al cargar) -->
+    <!-- Lista de clientes -->
     <div class="client-scroll" id="clientScroll" style="display:none"></div>
   </div>
 </div>
@@ -250,7 +264,7 @@ input[type=text]::placeholder{color:var(--muted)}
   <div class="slabel">📢 Aviso comunitario de cobros</div>
   <p style="font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:12px">Genera el aviso en formato privado:<br><strong style="color:var(--text)">Nombre · Estado · mail@</strong></p>
   <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:11px;color:var(--muted)">
-    Usa la lista que ya cargaste en la pestaña Mensajes. Filtra por día de cobro o usa todos.
+    Usa la lista cargada en la pestaña Mensajes. Filtra por día de cobro o usa todos.
   </div>
   <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
     <input type="text" id="avisoDia" placeholder="Día de cobro (ej. 10) — deja vacío para todos" style="flex:1">
@@ -312,27 +326,19 @@ input[type=text]::placeholder{color:var(--muted)}
 
 <!-- ══════════════ LEADS ══════════════ -->
 <div id="page-leads" style="display:none;flex:1;flex-direction:column;overflow:hidden;min-height:0">
-
-  <!-- BARRA SUPERIOR -->
   <div style="padding:10px 14px;border-bottom:1px solid var(--border);background:var(--surface);flex-shrink:0;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
     <input type="text" id="leadsUrl" placeholder="Link CSV de Sheets (hoja Leads)…" value="https://docs.google.com/spreadsheets/d/e/2PACX-1vSmhjMwQmCN4Yj78kFg1hM25DMh7L94JjcP5x_OSThpfUL8kZD99_mfE_ilU-ExeoJzBbci6Uj2hWZK/pub?gid=0&single=true&output=csv" style="flex:1;min-width:0;font-size:12px;padding:7px 10px">
     <button onclick="loadLeads()" class="btn" style="width:auto;padding:8px 14px;margin:0;font-size:12px;white-space:nowrap">⚡ Cargar</button>
   </div>
-
-  <!-- FILTROS -->
   <div style="padding:8px 14px;border-bottom:1px solid var(--border);display:flex;gap:6px;flex-wrap:wrap;flex-shrink:0" id="leadsFiltros" style="display:none">
     <button class="filter-btn on" onclick="filtrarLeads('todos')">Todos</button>
     <button class="filter-btn" onclick="filtrarLeads('muy_caliente')" style="border-color:#c9a84c;color:#c9a84c">🚀 Muy calientes</button>
     <button class="filter-btn" onclick="filtrarLeads('caliente')" style="border-color:#4caf7c;color:#4caf7c">🔥 Calientes</button>
     <button class="filter-btn" onclick="filtrarLeads('tibia')" style="border-color:#e0a84f;color:#e0a84f">🌤 Tibios</button>
     <button class="filter-btn" onclick="filtrarLeads('fria')" style="border-color:#4fa3e0;color:#4fa3e0">🧊 Fríos</button>
-    <button class="filter-btn" onclick="filtrarLeads('lead')" >Sin contactar</button>
+    <button class="filter-btn" onclick="filtrarLeads('lead')">Sin contactar</button>
   </div>
-
-  <!-- STATS -->
   <div style="padding:6px 14px;border-bottom:1px solid var(--border);font-size:11px;color:var(--muted);flex-shrink:0" id="leadsStats" style="display:none"></div>
-
-  <!-- LISTA LEADS -->
   <div style="flex:1;overflow-y:auto;padding:10px 14px;display:flex;flex-direction:column;gap:8px" id="leadsList">
     <div style="text-align:center;color:var(--muted);padding:40px 16px;font-size:12px">
       <div style="font-size:28px;margin-bottom:8px">🎯</div>
@@ -355,7 +361,6 @@ input[type=text]::placeholder{color:var(--muted)}
       <button onclick="closeFicha()" style="background:var(--card);border:none;color:var(--muted);font-size:16px;width:30px;height:30px;border-radius:50%;cursor:pointer">✕</button>
     </div>
     <div id="fichaFields"></div>
-    <!-- COBRANZA SUBTYPES — solo visible si mood es cobranza -->
     <div id="fichaCobranzaOpts" style="display:none;margin-top:10px">
       <div style="font-size:9px;color:var(--gold);letter-spacing:1px;margin-bottom:8px;font-family:Cinzel,serif">💸 TIPO DE COBRANZA PARA ESTE ALUMNO</div>
       <div style="display:flex;flex-direction:column;gap:6px" id="fichaCobranzaBtns"></div>
@@ -368,329 +373,134 @@ input[type=text]::placeholder{color:var(--muted)}
 
 <script>
 // ══ CONFIGURACIÓN ══════════════════════════════════════════════
-// Para Vercel: agrega ANTHROPIC_API_KEY en Environment Variables
-// y despliega un proxy. Para uso local sin proxy, pega tu key aquí:
-const API_ENDPOINT = '/api/claude';  // Proxy Vercel — la key vive en Vercel env vars
+const API_ENDPOINT = '/api/claude';
+
+// ── CSV de la BD principal (hoja Activos)
+const ACTIVOS_CSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSbCds0DzdoMik_qLYOd3ppgCE04DCAIfvQjtlivHO-IQm_lbbG7Oxnxga3uByHaqP3s9ejxBE05G6_/pub?gid=0&single=true&output=csv';
 
 const DATOS_PAGO = '\n\n💳 *Ricardo Flores Valdés*\n4152 3145 7013 9538 *Tarjeta de Débito BBVA*\n012650004907020488 *Clabe*\n0490702048 *Cuenta*';
 
-const LADAS = {"55": "CDMX", "56": "CDMX", "33": "Jalisco", "36": "Jalisco", "81": "Nuevo León", "222": "Puebla", "221": "Puebla", "224": "Puebla", "477": "Guanajuato", "461": "Guanajuato", "462": "Guanajuato", "464": "Guanajuato", "473": "Guanajuato", "476": "Guanajuato", "442": "Querétaro", "441": "Querétaro", "419": "Querétaro", "771": "Hidalgo", "775": "Hidalgo", "774": "Hidalgo", "722": "Edomex", "728": "Edomex", "712": "Edomex", "717": "Edomex", "718": "Edomex", "721": "Edomex", "724": "Edomex", "777": "Morelos", "735": "Morelos", "744": "Guerrero", "747": "Guerrero", "951": "Oaxaca", "954": "Oaxaca", "958": "Oaxaca", "961": "Chiapas", "962": "Chiapas", "963": "Chiapas", "964": "Chiapas", "966": "Chiapas", "967": "Chiapas", "968": "Chiapas", "999": "Yucatán", "997": "Yucatán", "988": "Yucatán", "998": "Q. Roo", "983": "Q. Roo", "984": "Q. Roo", "993": "Tabasco", "994": "Tabasco", "921": "Veracruz", "229": "Veracruz", "228": "Veracruz", "272": "Veracruz", "278": "Veracruz", "282": "Veracruz", "296": "Veracruz", "614": "Chihuahua", "656": "Chihuahua", "625": "Chihuahua", "639": "Chihuahua", "662": "Sonora", "644": "Sonora", "643": "Sonora", "642": "Sonora", "641": "Sonora", "686": "BC", "664": "BC", "665": "BC", "646": "BC", "612": "BCS", "624": "BCS", "618": "Durango", "674": "Durango", "871": "Coahuila", "844": "Coahuila", "861": "Coahuila", "878": "Coahuila", "834": "Tamaulipas", "868": "Tamaulipas", "833": "Tamaulipas", "899": "Tamaulipas", "867": "Tamaulipas", "813": "Tamaulipas", "312": "Colima", "314": "Colima", "341": "Jalisco", "375": "Jalisco", "351": "Jalisco", "331": "Jalisco", "378": "Jalisco", "321": "Nayarit", "311": "Nayarit", "492": "Zacatecas", "493": "Zacatecas", "444": "SLP", "481": "SLP", "482": "SLP", "449": "Aguascalientes", "465": "Aguascalientes", "434": "Michoacán", "443": "Michoacán", "452": "Michoacán", "353": "Michoacán", "913": "Campeche", "981": "Campeche", "922": "Veracruz", "271": "Veracruz", "238": "Puebla", "243": "Puebla", "275": "Puebla", "276": "Tlaxcala", "246": "Tlaxcala", "241": "Tlaxcala", "741": "Guerrero", "756": "Guerrero", "732": "Guerrero", "753": "Michoacán", "713": "Guerrero", "767": "Morelos", "787": "Guerrero"};
+const LADAS = {"55":"CDMX","56":"CDMX","33":"Jalisco","36":"Jalisco","81":"Nuevo León","222":"Puebla","221":"Puebla","224":"Puebla","477":"Guanajuato","461":"Guanajuato","462":"Guanajuato","464":"Guanajuato","473":"Guanajuato","476":"Guanajuato","442":"Querétaro","441":"Querétaro","419":"Querétaro","771":"Hidalgo","775":"Hidalgo","774":"Hidalgo","722":"Edomex","728":"Edomex","712":"Edomex","717":"Edomex","718":"Edomex","721":"Edomex","724":"Edomex","777":"Morelos","735":"Morelos","744":"Guerrero","747":"Guerrero","951":"Oaxaca","954":"Oaxaca","958":"Oaxaca","961":"Chiapas","962":"Chiapas","963":"Chiapas","964":"Chiapas","966":"Chiapas","967":"Chiapas","968":"Chiapas","999":"Yucatán","997":"Yucatán","988":"Yucatán","998":"Q. Roo","983":"Q. Roo","984":"Q. Roo","993":"Tabasco","994":"Tabasco","921":"Veracruz","229":"Veracruz","228":"Veracruz","272":"Veracruz","278":"Veracruz","282":"Veracruz","296":"Veracruz","614":"Chihuahua","656":"Chihuahua","625":"Chihuahua","639":"Chihuahua","662":"Sonora","644":"Sonora","643":"Sonora","642":"Sonora","641":"Sonora","686":"BC","664":"BC","665":"BC","646":"BC","612":"BCS","624":"BCS","618":"Durango","674":"Durango","871":"Coahuila","844":"Coahuila","861":"Coahuila","878":"Coahuila","834":"Tamaulipas","868":"Tamaulipas","833":"Tamaulipas","899":"Tamaulipas","867":"Tamaulipas","813":"Tamaulipas","312":"Colima","314":"Colima","341":"Jalisco","375":"Jalisco","351":"Jalisco","331":"Jalisco","378":"Jalisco","321":"Nayarit","311":"Nayarit","492":"Zacatecas","493":"Zacatecas","444":"SLP","481":"SLP","482":"SLP","449":"Aguascalientes","465":"Aguascalientes","434":"Michoacán","443":"Michoacán","452":"Michoacán","353":"Michoacán","913":"Campeche","981":"Campeche","922":"Veracruz","271":"Veracruz","238":"Puebla","243":"Puebla","275":"Puebla","276":"Tlaxcala","246":"Tlaxcala","241":"Tlaxcala","741":"Guerrero","756":"Guerrero","732":"Guerrero","753":"Michoacán","713":"Guerrero","767":"Morelos","787":"Guerrero"};
 
-// ══ ESTADO ════════════════════════════════════════════════════
+// ══ ÍNDICES DE COLUMNAS — hoja Activos (después de arreglarHeaders) ══
+// Col 0:Tutor  1:WA_adicional  2:WhatsApp  3:Dias_transcurridos
+// Col 4:Fecha_inscripcion  5:Dias_cobro  6:Nombre  7:Apellido
+// Col 8:Correo  9:Procedencia  10:WA_adicional2  11:WhatsApp2
+// Col 12:Estatus  13:Membresia  14:Medio_pago  15:Notas  16:Afiliado
+// Col 17+: historial de pagos por mes
+const COL = {
+  tutor:       0,
+  wa_adicional:1,
+  whatsapp:    2,
+  dias_trans:  3,
+  fecha_ins:   4,
+  dias_cobro:  5,
+  nombre:      6,
+  apellido:    7,
+  correo:      8,
+  procedencia: 9,
+  wa_adicional2:10,
+  whatsapp2:   11,
+  estatus:     12,
+  membresia:   13,
+  medio_pago:  14,
+  notas:       15,
+  afiliado:    16
+};
+
+// ══ ESTADO ═══════════════════════════════════════════════════
 let clients = [], filtered = [], selectedMood = null;
 let opts = { pago: true, antispam: true };
 let showPending = false, convWAPhone = '';
 const COLORS = ['#7c5cbf','#c9a84c','#4caf7c','#cf6679','#4fa3e0','#e07a3d','#9b7de0'];
 
-// ══ HELPERS ═══════════════════════════════════════════════════
-function aColor(n) { let h=0; for (let c of n) h=(h*31+c.charCodeAt(0))%COLORS.length; return COLORS[h]; }
-function firstName(n) { return n.trim().split(' ')[0]; }
-function elId(id) { return document.getElementById(id); }
+// ══ HELPERS ══════════════════════════════════════════════════
+function aColor(n){let h=0;for(let c of n)h=(h*31+c.charCodeAt(0))%COLORS.length;return COLORS[h];}
+function firstName(n){return n.trim().split(' ')[0];}
+function elId(id){return document.getElementById(id);}
 
-// ══ LEADS ═════════════════════════════════════════════════════
-function tiempoTranscurrido(fechaStr) {
-  if (!fechaStr || fechaStr.trim() === '') return null;
-  let d;
-  if (fechaStr.includes('T')) {
-    // ISO format: 2026-05-17T00:56:01Z — Make timestamp (UTC)
-    d = new Date(fechaStr);
-  } else if (fechaStr.match(/\d{1,2}\/\d{1,2}\/\d{4}\s+\d{1,2}:\d{2}/)) {
-    // DD/MM/YYYY HH:MM — hora México exacta, calcular diff directo sin conversión
-    const m = fechaStr.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2})/);
-    if (!m) return null;
-    // Usar UTC-6 explícito para que no dependa del timezone del navegador
-    const iso = m[3]+'-'+String(m[2]).padStart(2,'0')+'-'+String(m[1]).padStart(2,'0')+'T'+String(m[4]).padStart(2,'0')+':'+m[5]+':00-06:00';
-    d = new Date(iso);
-  } else if (fechaStr.match(/\d{1,2}\/\d{1,2}\/\d{4}/)) {
-    // DD/MM/YYYY sin hora — asumir mediodia hora México
-    const m = fechaStr.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
-    if (!m) return null;
-    const iso = m[3]+'-'+String(m[2]).padStart(2,'0')+'-'+String(m[1]).padStart(2,'0')+'T12:00:00-06:00';
-    d = new Date(iso);
-  } else {
-    return null;
-  }
-  if (!d || isNaN(d.getTime())) return null;
-  const ahora = new Date();
-  const diffMs = ahora - d;
-  if (diffMs < 0) return { texto: 'Ahora mismo', urgente: true, horas: 0 };
-  const mins  = Math.floor(diffMs / (1000 * 60));
-  const horas = Math.floor(diffMs / (1000 * 60 * 60));
-  const dias  = Math.floor(horas / 24);
-  if (mins < 60)  return { texto: `Hace ${mins} min`, urgente: true, horas: 0 };
-  if (horas < 24) return { texto: `Hace ${horas} hora${horas>1?'s':''}`, urgente: true, horas };
-  if (dias === 1) return { texto: 'Hace 1 día', urgente: false, horas };
-  return { texto: `Hace ${dias} días`, urgente: false, horas };
-}
+// ══ AUTO-CARGA AL INICIO ═════════════════════════════════════
+window.addEventListener('DOMContentLoaded', () => {
+  autoLoadActivos();
+});
 
-
-let leads = [], leadsFiltered = [], leadsFiltroActivo = 'todos';
-
-const TEMP_CONFIG = {
-  'muy_caliente': { icon:'🚀', label:'Muy caliente', color:'#c9a84c' },
-  'caliente':     { icon:'🔥', label:'Caliente',     color:'#4caf7c' },
-  'tibia':        { icon:'🌤️', label:'Tibio',        color:'#e0a84f' },
-  'fria':         { icon:'🧊', label:'Frío',          color:'#4fa3e0' },
-};
-
-async function loadLeads() {
-  let url = elId('leadsUrl').value.trim();
-  if (!url) { toast('Pega el link de tu hoja Leads', 'err'); return; }
-  if (!url.includes('output=csv')) url += (url.includes('?') ? '&' : '?') + 'output=csv';
-  toast('Cargando leads…', '');
+async function autoLoadActivos() {
+  elId('autoloadScreen').style.display = 'flex';
+  elId('loadScreen').style.display = 'none';
+  elId('clientScroll').style.display = 'none';
   try {
-    const r = await fetch(url);
-    if (!r.ok) throw new Error('No se pudo acceder');
+    const r = await fetch(ACTIVOS_CSV);
+    if (!r.ok) throw new Error('No se pudo acceder al Sheet');
     const text = await r.text();
-    parseLeads(text);
-  } catch(e) { toast('Error: ' + e.message, 'err'); }
+    processActivosCSV(text);
+  } catch(e) {
+    // Si falla, muestra pantalla manual con mensaje
+    elId('autoloadScreen').style.display = 'none';
+    elId('loadScreen').style.display = 'flex';
+    toast('No se pudo cargar Activos automáticamente. Carga manual.', 'err');
+  }
 }
 
-function parseLeads(csv) {
-  const lines = csv.replace(/^﻿/, '').split('\n').filter(l => l.trim());
-  if (lines.length < 2) { toast('La hoja está vacía', 'err'); return; }
-  const sep = lines[0].includes(';') ? ';' : ',';
-  const headers = lines[0].split(sep).map(h => h.replace(/"/g,'').trim().toLowerCase());
-  const g = (row, key) => { const i = headers.indexOf(key); return i >= 0 && i < row.length ? row[i].replace(/"/g,'').trim() : ''; };
-  leads = [];
+async function reloadActivos() {
+  elId('clientScroll').style.display = 'none';
+  elId('loadScreen').style.display = 'none';
+  elId('ctrlBar').style.display = 'none';
+  elId('listControls').style.display = 'none';
+  elId('autoloadScreen').style.display = 'flex';
+  clients = []; filtered = [];
+  updateStats();
+  await autoLoadActivos();
+}
+
+// ══ PARSER ESPECÍFICO PARA HOJA ACTIVOS ══════════════════════
+// Usa índices fijos de columna — no depende de nombres de header
+function processActivosCSV(csv) {
+  const lines = csv.replace(/^\uFEFF/, '').split('\n').filter(l => l.trim());
+  // Fila 0 = headers limpios, datos desde fila 1
+  if (lines.length < 2) { showManualScreen('La hoja Activos está vacía'); return; }
+
+  clients = [];
   for (let i = 1; i < lines.length; i++) {
-    const row = splitCSV(lines[i], sep);
-    const tel = g(row, 'telefono'), nom = g(row, 'nombre');
-    if (!tel && !nom) continue;
-    leads.push({ telefono:tel, nombre:nom||'Sin nombre', curso_interes:g(row,'curso_interes'), fecha_contacto:g(row,'fecha_contacto'), fecha_procesado:g(row,'fecha_procesado'), temperatura:g(row,'temperatura')||'fria', objeciones:g(row,'objeciones'), preguntas:g(row,'preguntas'), sugerencia:g(row,'sugerencia_seguimiento'), estatus:g(row,'estatus')||'lead', notas:g(row,'notas'), msg:'' });
+    const row = splitCSV(lines[i], ',');
+    const g = j => (j < row.length && row[j] !== undefined) ? row[j].replace(/^"|"$/g, '').trim() : '';
+
+    const nombre    = (g(COL.nombre) + ' ' + g(COL.apellido)).trim();
+    if (!nombre || nombre.length < 2) continue;
+
+    // WhatsApp: primero col 2, si está vacío col 11 (WhatsApp2), si no col 1 (WA_adicional)
+    const wa_main  = cleanPhone(g(COL.whatsapp)) || cleanPhone(g(COL.whatsapp2)) || cleanPhone(g(COL.wa_adicional));
+    const wa_alt   = cleanPhone(g(COL.wa_adicional));
+
+    clients.push({
+      nombre,
+      whatsapp:    wa_main,
+      wa_adicional:wa_alt,
+      correo:      g(COL.correo),
+      estatus:     g(COL.estatus) || 'activo',
+      membresia:   g(COL.membresia),
+      dias_cobro:  g(COL.dias_cobro),
+      dias_trans:  g(COL.dias_trans),
+      fecha_ins:   g(COL.fecha_ins),
+      procedencia: g(COL.procedencia),
+      notas:       g(COL.notas),
+      tutor:       g(COL.tutor),
+      medio_pago:  g(COL.medio_pago),
+      msg:         '',
+      contacted:   false,
+    });
   }
-  if (!leads.length) { toast('No encontré leads', 'err'); return; }
-  leadsFiltered = [...leads];
-  elId('leadsFiltros').style.display = 'flex';
-  elId('leadsStats').style.display = 'block';
-  renderLeads();
-  toast(leads.length + ' leads cargados ✓', 'ok');
+
+  if (!clients.length) { showManualScreen('No encontré alumnos en la hoja Activos'); return; }
+  afterLoad(true);
 }
 
-function filtrarLeads(filtro) {
-  leadsFiltroActivo = filtro;
-  document.querySelectorAll('#leadsFiltros .filter-btn').forEach(b => b.classList.remove('on'));
-  event.currentTarget.classList.add('on');
-  if (filtro === 'todos') leadsFiltered = [...leads];
-  else if (filtro === 'lead') leadsFiltered = leads.filter(l => l.estatus === 'lead');
-  else leadsFiltered = leads.filter(l => l.temperatura === filtro);
-  renderLeads();
+function showManualScreen(msg) {
+  elId('autoloadScreen').style.display = 'none';
+  elId('loadScreen').style.display = 'flex';
+  if (msg) toast(msg, 'err');
 }
 
-function estatusLeadLabel(e) {
-  return { lead:'📍 Lead', contactado:'📞 Contactado', convertido:'✅ Convertido', descartado:'🚫 Desc.' }[e] || e;
-}
-
-function renderLeads() {
-  const el = elId('leadsList'); el.innerHTML = '';
-  const muyC=leads.filter(l=>l.temperatura==='muy_caliente').length, cal=leads.filter(l=>l.temperatura==='caliente').length;
-  const tib=leads.filter(l=>l.temperatura==='tibia').length, fri=leads.filter(l=>l.temperatura==='fria').length;
-  elId('leadsStats').textContent = leads.length + ' leads · 🚀' + muyC + ' 🔥' + cal + ' 🌤' + tib + ' 🧊' + fri;
-  if (!leadsFiltered.length) { el.innerHTML = '<div style="text-align:center;color:var(--muted);padding:30px;font-size:12px">No hay leads con ese filtro</div>'; return; }
-  leadsFiltered.forEach(l => {
-    const idx = leads.indexOf(l);
-    const tc = TEMP_CONFIG[l.temperatura] || TEMP_CONFIG['fria'];
-    const card = document.createElement('div');
-    card.style.cssText = 'background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:0';
-    card.innerHTML =
-      '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">'
-      + '<div class="avatar" style="background:'+aColor(l.nombre)+';width:38px;height:38px;font-size:15px;cursor:default">'+l.nombre.charAt(0).toUpperCase()+'</div>'
-      + '<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700">'+l.nombre+'</div>'
-      + '<div style="font-size:10px;color:var(--muted)">'+( l.telefono||'Sin tel')+'</div>'
-      + ((l.fecha_contacto||l.fecha_procesado) ? (function(){ var ref=l.fecha_procesado||l.fecha_contacto; var t=tiempoTranscurrido(ref); return '<div style="font-size:10px;font-weight:700;color:'+(t&&t.urgente?'#e07a3d':'var(--muted)')+'">⏱ '+l.fecha_contacto+(t?' · '+t.texto:'')+(t&&t.urgente?' ⚡':'')+'</div>'; })() : '')
-      + '</div>'
-      + '<span style="font-size:10px;padding:3px 8px;border-radius:20px;background:'+tc.color+'22;color:'+tc.color+';font-weight:700;white-space:nowrap">'+tc.icon+' '+tc.label+'</span>'
-      + '</div>'
-      + (l.curso_interes ? '<div style="font-size:11px;color:var(--vl);margin-bottom:6px">📚 '+l.curso_interes+'</div>' : '')
-      + (l.sugerencia ? '<div style="font-size:11px;color:var(--muted);line-height:1.5;margin-bottom:8px;padding:6px 8px;background:var(--surface);border-radius:6px">💡 '+l.sugerencia+'</div>' : '')
-      + '<div id="leadLoad'+idx+'" class="msg-loading"><div class="spinner"></div>Generando…</div>'
-      + '<div id="leadMsg'+idx+'" class="msg-preview'+(l.msg?' show':'')+'">'+l.msg+'</div>'
-      + '<div style="display:flex;gap:5px;margin-top:8px">'
-      + '<button onclick="genLead('+idx+')" style="flex:1;border:1px solid var(--violet);border-radius:8px;padding:7px 3px;background:var(--surface);color:var(--vl);font-size:9px;font-weight:700;cursor:pointer;font-family:Lato,sans-serif">'+(l.msg?'🔄':'✨')+' '+(l.msg?'Regen':'Generar')+'</button>'
-      + '<button onclick="openWALead('+idx+')" style="flex:1;border:1px solid '+(l.telefono&&l.msg?'#25d366':'var(--border)')+'  ;border-radius:8px;padding:7px 3px;background:var(--surface);color:'+(l.telefono&&l.msg?'#25d366':'var(--muted)')+';font-size:9px;font-weight:700;cursor:pointer;font-family:Lato,sans-serif">💬 WA</button>'
-      + '<button onclick="copyLead('+idx+')" style="flex:1;border:1px solid var(--border);border-radius:8px;padding:7px 3px;background:var(--surface);color:var(--text);font-size:9px;font-weight:700;cursor:pointer;font-family:Lato,sans-serif">📋 Copiar</button>'
-      + '<button onclick="cycleEstatus('+idx+', this)" style="flex:1;border:1px solid var(--border);border-radius:8px;padding:7px 3px;background:var(--surface);color:var(--muted);font-size:9px;font-weight:700;cursor:pointer;font-family:Lato,sans-serif">'+estatusLeadLabel(l.estatus)+'</button>'
-      + '</div>';
-    el.appendChild(card);
-  });
-}
-
-function cycleEstatus(idx, btn) {
-  const orden = ['lead','contactado','convertido','descartado'];
-  const l = leads[idx];
-  l.estatus = orden[(orden.indexOf(l.estatus)+1) % orden.length];
-  btn.textContent = estatusLeadLabel(l.estatus);
-}
-
-async function genLead(idx) {
-  const l = leads[idx];
-  const loadEl = elId('leadLoad'+idx), msgEl = elId('leadMsg'+idx);
-  if (loadEl) loadEl.classList.add('show');
-  if (msgEl)  msgEl.classList.remove('show');
-  const prompt = 'Eres Ricardo Flores, fundador de la Academia Luz Arcana (cursos espirituales: Tarot, Runas, Astrología, Numerología, Herbolaria, Yoga, Mindfulness y más).\n\nEscribe un mensaje de WhatsApp de seguimiento. Improvisa y adapta el ángulo y el cierre según lo que sabes de la conversación.\n\nCONTEXTO:\n- Nombre: '+l.nombre+'\n- Curso: '+(l.curso_interes||'no especificado')+'\n- Temperatura: '+l.temperatura+'\n- Preguntas: '+(l.preguntas||'ninguna')+'\n- Objeciones: '+(l.objeciones||'ninguna')+'\n- Contexto: '+(l.sugerencia||'ninguno')+'\n- Fecha de contacto: '+(l.fecha_contacto||'reciente')+'\n- Tiempo transcurrido: '+(tiempoTranscurrido(l.fecha_contacto)?tiempoTranscurrido(l.fecha_contacto).texto:'desconocido')+' (si es menos de 24 horas menciona que viste su mensaje recién y que quisiste escribirle pronto)'+'\n\nDATOS DE LUZ ARCANA (usa los que encajen natural, no todos):\n- Más de 500 alumnas inscritas\n- Precio de beca activo pero se acaba — hay otras personas que también lo quieren\n- Acceso permanente: no los soltamos hasta que de verdad lo aprendan\n- Se puede pagar con tarjeta\n- Se puede entrar en cualquier momento, a su ritmo\n\nVOZ DE RICARDO: español mexicano, tuteo (tú nunca vos), cercano, directo, jiribilla muy suave, nunca vendedor de humo.\n\nREGLAS:\n- SOLO el cuerpo del mensaje\n- Saluda con primer nombre\n- Cierra con pregunta que asume que sí va a entrar (micro compromiso)\n- Máximo 5 oraciones\n- Máximo 2 emojis\n- Firma: *Ricardo / Luz Arcana* ✨';
-  try {
-    const res = await fetch(API_ENDPOINT, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ model:'claude-haiku-4-5', max_tokens:400, messages:[{role:'user',content:prompt}] }) });
-    if (!res.ok) throw new Error('Error '+res.status);
-    const data = await res.json();
-    l.msg = (data.content||[]).map(b=>b.text||'').join('').trim();
-    if (loadEl) loadEl.classList.remove('show');
-    if (msgEl)  { msgEl.textContent = l.msg; msgEl.classList.add('show'); }
-    renderLeads();
-  } catch(e) { if (loadEl) loadEl.classList.remove('show'); toast('Error: '+e.message, 'err'); }
-}
-
-function openWALead(idx) {
-  const l = leads[idx];
-  if (!l.msg) { toast('Genera el mensaje primero', 'err'); return; }
-  if (!l.telefono) { toast('Sin teléfono', 'err'); return; }
-  window.open('https://wa.me/'+cleanPhone(l.telefono)+'?text='+encodeURIComponent(l.msg), '_blank');
-  l.estatus = 'contactado'; renderLeads();
-}
-
-function copyLead(idx) {
-  const l = leads[idx];
-  if (!l.msg) { toast('Genera el mensaje primero', 'err'); return; }
-  navigator.clipboard.writeText(l.msg).then(() => toast('Copiado 📋', 'ok'));
-}
-
-function toast(msg, type='') {
-  const t = elId('toast');
-  t.textContent = msg; t.className = 'toast show ' + type;
-  clearTimeout(t._t); t._t = setTimeout(() => t.className = 'toast', 2800);
-}
-
-// ══ FECHA / DÍAS ══════════════════════════════════════════════
-function diasConNosotros(fechaStr) {
-  if (!fechaStr) return null;
-  // Intentar parsear varios formatos: DD/MM/YYYY, YYYY-MM-DD, MM/DD/YYYY
-  let d = null;
-  const s = fechaStr.trim();
-  // YYYY-MM-DD or datetime string
-  if (/^\d{4}-\d{2}-\d{2}/.test(s)) d = new Date(s.slice(0,10));
-  // DD/MM/YYYY
-  else if (/^\d{1,2}\/\d{1,2}\/\d{4}/.test(s)) {
-    const [day,mon,yr] = s.split('/');
-    d = new Date(parseInt(yr), parseInt(mon)-1, parseInt(day));
-  }
-  // MM/DD/YYYY
-  else if (/^\d{1,2}-\d{1,2}-\d{4}/.test(s)) {
-    const [day,mon,yr] = s.split('-');
-    d = new Date(parseInt(yr), parseInt(mon)-1, parseInt(day));
-  }
-  // Excel serial number
-  else if (/^\d{4,5}$/.test(s)) {
-    const serial = parseInt(s);
-    d = new Date((serial - 25569) * 86400 * 1000);
-  }
-  if (!d || isNaN(d.getTime())) return null;
-  const hoy = new Date();
-  const diff = Math.floor((hoy - d) / (1000 * 60 * 60 * 24));
-  return { fecha: d.toLocaleDateString('es-MX', {day:'numeric',month:'long',year:'numeric'}), dias: diff };
-}
-
-function formatDias(n) {
-  if (n === null) return '—';
-  if (n < 30)  return n + ' días';
-  if (n < 365) return Math.floor(n/30) + ' meses y ' + (n%30) + ' días';
-  const yrs = Math.floor(n/365); const rest = Math.floor((n%365)/30);
-  return yrs + (yrs===1?' año':' años') + (rest>0?' y '+rest+' meses':'');
-}
-
-// ══ LADAS ═════════════════════════════════════════════════════
-function getEstado(wa) {
-  const d = wa.replace(/\D/g,'');
-  // Quitar 52 del inicio, luego leer lada
-  const n = d.startsWith('52') ? d.slice(2) : d;
-  return LADAS[n.slice(0,3)] || LADAS[n.slice(0,2)] || 'México';
-}
-function mailPrefix(m) {
-  if (!m) return 'sin-correo@';
-  const s = m.split(',')[0].trim();
-  const i = s.indexOf('@');
-  return i > 0 ? s.slice(0, i) + '@' : s;
-}
-
-// ══ NAV ════════════════════════════════════════════════════════
-function showNav(name) {
-  ['mensajes','aviso','conv','leads'].forEach(s => {
-    const p = elId('page-' + s);
-    p.style.display = s === name ? 'flex' : 'none';
-    if (s === name) p.style.flexDirection = 'column';
-    elId('nav-' + s).classList.toggle('on', s === name);
-  });
-  // Auto-load leads when tab opens
-  if (name === 'leads' && !leads.length) loadLeads();
-}
-
-// ══ PANEL MOOD ════════════════════════════════════════════════
-function togglePanel() { elId('topPanel').classList.toggle('collapsed'); }
-function openPanel()   { elId('topPanel').classList.remove('collapsed'); }
-function closePanel()  { elId('topPanel').classList.add('collapsed'); }
-
-function pickMood(btn, mood) {
-  document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('on'));
-  btn.classList.add('on');
-  selectedMood = mood;
-  elId('customMood').value = '';
-  const label = getMoodLabel(mood).split('—')[0].split('(')[0].trim();
-  elId('panelTitle').textContent = '🎭 ' + label + ' · toca para cambiar';
-  // Show promo curso fields only for promo_curso mood
-  elId('promoCursoBox').style.display = mood === 'promo_curso' ? 'block' : 'none';
-  closePanel();
-}
-function pickCustomMood() {
-  const v = elId('customMood').value.trim();
-  if (!v) return;
-  document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('on'));
-  selectedMood = 'custom:' + v;
-  elId('panelTitle').textContent = '🎭 ' + v + ' · toca para cambiar';
-  closePanel();
-}
-function getMoodLabel(mood) {
-  if (!mood) return '(sin mood)';
-  if (mood.startsWith('custom:')) return mood.replace('custom:','').trim();
-  return {
-    cobranza:             'Cobranza — recordatorio amable de pago pendiente',
-    cobranza_normal:      'Cobranza — recordatorio amable de mensualidad pendiente',
-    cobranza_migracion:   'Cobranza migración a permanente — ya no habrá mensualidades, tenemos un descuento especial para ti',
-    cobranza_anualidad_viejitos: 'Cobranza anualidad alumnos antiguos — con un solo pago accedes para siempre, precio especial calculado x10 meses',
-    bienvenida:    'Bienvenida — cliente nuevo entrando a la academia',
-    reactivacion:  'Reactivación — cliente que dejó de pagar, invitarlo a volver',
-    levanta_muertos:'Levanta muertos — sin actividad larga, tono muy personal y emotivo',
-    upgrade:       'Upgrade permanente ($620 individual o $1,100 bundle 2 cursos)',
-    anualidad:     'Anualidad — acceso completo un año por $3,500',
-    promo_curso:   'Promo de curso específico de la academia',
-    complementario:'Curso complementario — ya tiene uno, ofrecerle el siguiente'
-  }[mood] || mood;
-}
-
-// ══ TOGGLES ════════════════════════════════════════════════════
-function togOpt(k) { opts[k] = !opts[k]; elId('tog-' + k).classList.toggle('on', opts[k]); }
-
-// ══ PRECIO DESDE ESTATUS ══════════════════════════════════════
-function precioDeEstatus(est) {
-  const m = est.match(/\$?\s*(\d{2,4})/);
-  return m ? '$' + m[1] + '/mes' : null;
-}
-
-// ══ TABS ═══════════════════════════════════════════════════════
-function swtab(n) {
-  document.querySelectorAll('#loadScreen .tab').forEach((b,i) => b.classList.toggle('on', ['paste','file','sheets'][i] === n));
-  document.querySelectorAll('#loadScreen .tab-panel').forEach(p => p.classList.remove('on'));
-  elId('tab-' + n).classList.add('on');
-}
-function swAviso(n) {
-  document.querySelectorAll('#page-aviso .tab').forEach((b,i) => b.classList.toggle('on', ['paste','bd'][i] === n));
-  ['aviso-paste','aviso-bd'].forEach(id => elId(id).classList.remove('on'));
-  elId('aviso-' + n).classList.add('on');
-}
-function swConv(n) {
-  document.querySelectorAll('#page-conv .tab').forEach((b,i) => b.classList.toggle('on', ['paste','file'][i] === n));
-  ['conv-paste','conv-file'].forEach(id => elId(id).classList.remove('on'));
-  elId('conv-' + n).classList.add('on');
-}
-
-// ══ CARGAR CLIENTES ════════════════════════════════════════════
+// ══ PARSER GENÉRICO (carga manual — por nombre de columna) ═══
 function parsePaste() {
   const r = elId('pasteArea').value.trim();
   if (!r) { toast('Pega tu lista primero', 'err'); return; }
@@ -698,12 +508,53 @@ function parsePaste() {
   processRaw(r, sep);
 }
 
+function processRaw(raw, sep) {
+  const lines = raw.split('\n').filter(l => l.trim());
+  if (lines.length < 2) { toast('Necesito al menos 2 filas', 'err'); return; }
+  const headers = lines[0].replace(/^\uFEFF/, '').split(sep).map(h => h.replace(/"/g, '').trim().toLowerCase());
+  const ic = keys => { for (const k of keys) { const i = headers.findIndex(h => h.includes(k)); if (i >= 0) return i; } return -1; };
+  const idx = {
+    dias_trans:  ic(['días transcurridos','dias transcurridos','dias_trans']),
+    fecha_ins:   ic(['fecha_inscripcion','fecha de inscripcion','inscripcion']),
+    dias_cobro:  ic(['dias_cobro','dias de cobro','día de cobro','cobro']),
+    nombre:      ic(['nombre','name']),
+    apellido:    ic(['apellido','lastname']),
+    correo:      ic(['correo','email','mail']),
+    procedencia: ic(['procedencia','pagina de procedencia']),
+    wa_adicional:ic(['wa_adicional','whatsapp adicional']),
+    whatsapp:    headers.findIndex(h => h.includes('whatsapp') && !h.includes('adicional') && !h.includes('2')),
+    whatsapp2:   ic(['whatsapp2']),
+    estatus:     ic(['estatus','status']),
+    membresia:   ic(['membresia','membresía']),
+    notas:       ic(['notas']),
+    tutor:       ic(['tutor']),
+    medio_pago:  ic(['medio_pago','medio de pago']),
+  };
+  clients = [];
+  for (let i = 1; i < lines.length; i++) {
+    const c = splitCSV(lines[i], sep);
+    const g = j => (j >= 0 && j < c.length) ? c[j].replace(/^"|"$/g,'').trim() : '';
+    const nom = (g(idx.nombre) + ' ' + g(idx.apellido)).trim();
+    if (!nom || nom.length < 2) continue;
+    const wa_main = cleanPhone(g(idx.whatsapp)) || cleanPhone(g(idx.whatsapp2)) || cleanPhone(g(idx.wa_adicional));
+    const wa_alt  = cleanPhone(g(idx.wa_adicional));
+    clients.push({
+      nombre: nom, whatsapp: wa_main, wa_adicional: wa_alt,
+      correo: g(idx.correo), estatus: g(idx.estatus)||'activo',
+      membresia: g(idx.membresia), dias_cobro: g(idx.dias_cobro),
+      dias_trans: g(idx.dias_trans), fecha_ins: g(idx.fecha_ins),
+      procedencia: g(idx.procedencia), notas: g(idx.notas),
+      tutor: g(idx.tutor), medio_pago: g(idx.medio_pago),
+      msg:'', contacted:false,
+    });
+  }
+  if (!clients.length) { toast('No encontré clientes. Revisa el formato.', 'err'); return; }
+  afterLoad(false);
+}
+
 function processXLSX(ws) {
-  const ref = ws['!ref'];
-  if (!ref) { toast('Hoja vacía', 'err'); return; }
-  const data = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false, dateNF: 'DD/MM/YYYY' });
-  if (data.length < 2) { toast('Necesito al menos 2 filas', 'err'); return; }
-  // Find header row (first non-empty row)
+  const data = XLSX.utils.sheet_to_json(ws, { header:1, raw:false, dateNF:'DD/MM/YYYY' });
+  if (data.length < 2) { toast('Hoja vacía', 'err'); return; }
   let hRowIdx = 0;
   for (let i = 0; i < Math.min(5, data.length); i++) {
     if (data[i].some(c => c && String(c).trim())) { hRowIdx = i; break; }
@@ -711,116 +562,64 @@ function processXLSX(ws) {
   const headers = data[hRowIdx].map(h => String(h||'').trim().toLowerCase());
   const ic = keys => { for (const k of keys) { const i = headers.findIndex(h => h.includes(k)); if (i >= 0) return i; } return -1; };
   const idx = {
-    dias_trans:  ic(['días transcurridos','dias transcurridos']),
-    fecha_ins:   ic(['fecha de inscripcion','inscripcion']),
-    dias_cobro:  ic(['dias de cobro','día de cobro','dias de cob']),
+    dias_trans:  ic(['días transcurridos','dias_trans','dias transcurridos']),
+    fecha_ins:   ic(['fecha_inscripcion','fecha de inscripcion','inscripcion']),
+    dias_cobro:  ic(['dias_cobro','dias de cobro','día de cobro']),
     nombre:      ic(['nombre']),
     apellido:    ic(['apellido']),
     correo:      ic(['correo','email']),
-    procedencia: ic(['pagina de procedencia','procedencia']),
-    wa_adicional:ic(['whatsapp adicional','wa adicional']),
-    whatsapp:    headers.findIndex(h => h.trim().includes('whatsapp') && !h.includes('adicional')),
+    procedencia: ic(['procedencia','pagina de procedencia']),
+    wa_adicional:ic(['wa_adicional','whatsapp adicional']),
+    whatsapp:    headers.findIndex(h => h.includes('whatsapp') && !h.includes('adicional') && !h.includes('2')),
+    whatsapp2:   ic(['whatsapp2']),
     estatus:     ic(['estatus','status']),
     membresia:   ic(['membresia','membresía']),
     notas:       ic(['notas']),
+    tutor:       ic(['tutor']),
+    medio_pago:  ic(['medio_pago','medio de pago']),
   };
   clients = [];
   for (let i = hRowIdx + 1; i < data.length; i++) {
     const row = data[i];
-    const g = j => (j >= 0 && j < row.length && row[j] !== null && row[j] !== undefined) ? String(row[j]).trim() : '';
+    const g = j => (j >= 0 && j < row.length && row[j] != null) ? String(row[j]).trim() : '';
     const nom = (g(idx.nombre) + ' ' + g(idx.apellido)).trim();
     if (!nom || nom.length < 2) continue;
-    const wa_main = cleanPhone(g(idx.whatsapp));
+    const wa_main = cleanPhone(g(idx.whatsapp)) || cleanPhone(g(idx.whatsapp2)) || cleanPhone(g(idx.wa_adicional));
     const wa_alt  = cleanPhone(g(idx.wa_adicional));
     clients.push({
-      nombre:      nom,
-      whatsapp:    wa_main || wa_alt,
-      wa_adicional:wa_alt,
-      correo:      g(idx.correo),
-      estatus:     g(idx.estatus) || 'activo',
-      membresia:   g(idx.membresia),
-      dias_cobro:  g(idx.dias_cobro),
-      dias_trans:  g(idx.dias_trans),
-      fecha_ins:   g(idx.fecha_ins),
-      procedencia: g(idx.procedencia),
-      notas:       g(idx.notas),
-      msg: '', contacted: false,
+      nombre:nom, whatsapp:wa_main, wa_adicional:wa_alt,
+      correo:g(idx.correo), estatus:g(idx.estatus)||'activo',
+      membresia:g(idx.membresia), dias_cobro:g(idx.dias_cobro),
+      dias_trans:g(idx.dias_trans), fecha_ins:g(idx.fecha_ins),
+      procedencia:g(idx.procedencia), notas:g(idx.notas),
+      tutor:g(idx.tutor), medio_pago:g(idx.medio_pago),
+      msg:'', contacted:false,
     });
   }
   if (!clients.length) { toast('No encontré clientes. Revisa el archivo.', 'err'); return; }
-  afterLoad();
-}
-
-function processRaw(raw, sep) {
-  const lines = raw.split('\n').filter(l => l.trim());
-  if (lines.length < 2) { toast('Necesito al menos 2 filas (encabezados + datos)', 'err'); return; }
-  const headers = lines[0].replace(/^\uFEFF/,'').split(sep).map(h => h.replace(/"/g,'').trim().toLowerCase());
-  const ic = keys => { for (const k of keys) { const i = headers.findIndex(h => h.trim().includes(k)); if (i >= 0) return i; } return -1; };
-  // Columnas fijas de la plantilla Luz Arcana
-  const idx = {
-    dias_trans:  ic(['días transcurridos','dias transcurridos','dias trans']),
-    fecha_ins:   ic(['fecha de inscripcion','fecha inscripcion','inscripcion','fecha inicio']),
-    dias_cobro:  ic(['dias de cobro','días de cobro','dias de cob','día de cobro','dia de cobro','cobro']),
-    nombre:      ic(['nombre','name']),
-    apellido:    ic(['apellido','lastname','last name']),
-    correo:      ic(['correo','email','mail']),
-    procedencia: ic(['pagina de procedencia','procedencia','pagina','fuente']),
-    wa_adicional:ic(['whatsapp adicional','wa adicional','tel adicional']),
-    whatsapp:    headers.findIndex(h => h.trim().includes('whatsapp') && !h.includes('adicional')),
-    estatus:     ic(['estatus','status','estado']),
-    membresia:   ic(['membresia','membresía','tipo de membresia','tipo']),
-    notas:       ic(['notas','notes','nota']),
-  };
-  clients = [];
-  for (let i = 1; i < lines.length; i++) {
-    const c = splitCSV(lines[i], sep);
-    const g = j => (j >= 0 && j < c.length) ? c[j].trim() : '';
-    const nom = (g(idx.nombre) + ' ' + g(idx.apellido)).trim();
-    if (!nom || nom.length < 2) continue;
-    const wa_main = cleanPhone(g(idx.whatsapp));
-    const wa_alt  = cleanPhone(g(idx.wa_adicional));
-    clients.push({
-      nombre:      nom,
-      whatsapp:    wa_main || wa_alt,   // usa adicional si el principal está vacío
-      wa_adicional:wa_alt,
-      correo:      g(idx.correo),
-      estatus:     g(idx.estatus) || 'activo',
-      membresia:   g(idx.membresia),
-      dias_cobro:  g(idx.dias_cobro),
-      dias_trans:  g(idx.dias_trans),
-      fecha_ins:   g(idx.fecha_ins),
-      procedencia: g(idx.procedencia),
-      notas:       g(idx.notas),
-      msg:         '',
-      contacted:   false,
-    });
-  }
-  if (!clients.length) { toast('No encontré clientes. Revisa el formato.', 'err'); return; }
-  afterLoad();
+  afterLoad(false);
 }
 
 function splitCSV(line, sep) {
   if (sep === '\t') return line.split('\t').map(c => c.replace(/^"|"$/g,'').trim());
-  const res = []; let cur = '', inQ = false;
-  for (let i = 0; i < line.length; i++) {
-    const ch = line[i];
-    if (ch === '"') { inQ = !inQ; }
-    else if (ch === sep && !inQ) { res.push(cur.trim()); cur = ''; }
-    else cur += ch;
+  const res=[]; let cur='', inQ=false;
+  for (let i=0;i<line.length;i++) {
+    const ch=line[i];
+    if (ch==='"'){inQ=!inQ;}
+    else if (ch===sep&&!inQ){res.push(cur.trim());cur='';}
+    else cur+=ch;
   }
   res.push(cur.trim());
   return res;
 }
+
 function cleanPhone(r) {
-  if (r === null || r === undefined || r === '') return '';
-  // Tomar primer número si hay varios separados por coma
+  if (!r) return '';
   const raw = String(r).split(',')[0].trim();
-  // Solo dígitos
-  const digits = raw.replace(/\D/g, '');
+  const digits = raw.replace(/\D/g,'');
   if (!digits) return '';
-  // Siempre usar los últimos 10 dígitos — ignora +52, 521, 52, etc.
   const last10 = digits.slice(-10);
-  return '52' + last10;  // formato para wa.me sin +
+  return '52' + last10;
 }
 
 async function handleFile(file) {
@@ -839,13 +638,13 @@ async function handleFile(file) {
         await loadScript('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js');
       }
       const buf = await file.arrayBuffer();
-      const wb = XLSX.read(buf, { type: 'array' });
+      const wb = XLSX.read(buf, { type:'array' });
       const ws = wb.Sheets[wb.SheetNames[0]];
       processXLSX(ws);
       st.textContent = '';
     }
   } catch(e) {
-    st.textContent = 'Error leyendo el archivo: ' + e.message;
+    st.textContent = 'Error: ' + e.message;
     toast('Error al leer archivo', 'err');
   }
 }
@@ -854,7 +653,7 @@ async function loadSheets() {
   let url = elId('sheetsUrl').value.trim();
   const st = elId('sheetsStatus');
   if (!url) { toast('Pega el link de Sheets', 'err'); return; }
-  if (!url.includes('output=csv')) url += (url.includes('?') ? '&' : '?') + 'output=csv';
+  if (!url.includes('output=csv')) url += (url.includes('?')?'&':'?')+'output=csv';
   st.textContent = 'Descargando…';
   try {
     const r = await fetch(url);
@@ -863,31 +662,33 @@ async function loadSheets() {
     processRaw(t, ',');
     st.textContent = '';
   } catch(e) {
-    st.textContent = '⚠️ Publica el Sheet como CSV primero: Archivo → Compartir → Publicar en la web → CSV.';
+    st.textContent = '⚠️ Publica el Sheet como CSV primero.';
     toast('Error al cargar Sheets', 'err');
   }
 }
 
 function loadScript(src) {
-  return new Promise((res, rej) => {
+  return new Promise((res,rej) => {
     const s = document.createElement('script');
-    s.src = src; s.onload = res; s.onerror = () => rej(new Error('No se pudo cargar ' + src));
+    s.src=src; s.onload=res; s.onerror=()=>rej(new Error('No se pudo cargar '+src));
     document.head.appendChild(s);
   });
 }
 
-function afterLoad() {
+function afterLoad(esActivos) {
   filtered = [...clients];
+  elId('autoloadScreen').style.display = 'none';
   elId('loadScreen').style.display = 'none';
   elId('clientScroll').style.display = 'flex';
   elId('ctrlBar').style.display = 'flex';
   elId('listControls').style.display = 'flex';
   renderList();
   updateStats();
-  toast(clients.length + ' clientes cargados ✓', 'ok');
+  const src = esActivos ? 'Activos · Luz Arcana' : 'BD externa';
+  toast(clients.length + ' clientes cargados ✓ — ' + src, 'ok');
 }
 
-// ══ RENDER ═════════════════════════════════════════════════════
+// ══ RENDER ════════════════════════════════════════════════════
 function renderList() {
   const el = elId('clientScroll');
   el.innerHTML = '';
@@ -900,22 +701,18 @@ function renderList() {
   src.forEach(c => {
     const idx = clients.indexOf(c);
     const card = document.createElement('div');
-    card.className = 'ccard' + (c.contacted ? ' sent' : '');
+    card.className = 'ccard' + (c.contacted?' sent':'');
     const ini = c.nombre.charAt(0).toUpperCase();
     const col = aColor(c.nombre);
     const _es = c.estatus.toLowerCase();
-    const bc = _es.includes('permanente')                    ? 'permanente'
-             : _es.includes('embajador')                     ? 'embajador'
-             : _es.includes('beca')                          ? 'beca'
-             : _es.includes('conflictiva')                   ? 'conflictiva'
-             : _es.includes('prueba')                        ? 'prueba'
-             : (_es.includes('no aceptad') || _es==='solo sigilos' || _es==='solo tarot' || _es.includes('domiciliado') && !_es.includes('activo')) ? 'especial'
-             : _es.includes('activo')                        ? 'activo'
-             : _es.includes('revocado')                      ? 'revocado' : 'default';
-    const msgId   = 'msg' + idx;
-    const loadId  = 'ld' + idx;
-    const waId    = 'wa' + idx;
-    const chkId   = 'chk' + idx;
+    const bc = _es.includes('permanente')  ? 'permanente'
+             : _es.includes('embajador')   ? 'embajador'
+             : _es.includes('beca')        ? 'beca'
+             : _es.includes('conflictiva') ? 'conflictiva'
+             : _es.includes('prueba')      ? 'prueba'
+             : (_es==='solo sigilos'||_es==='solo tarot') ? 'especial'
+             : _es.includes('activo')      ? 'activo'
+             : _es.includes('revocado')    ? 'revocado' : 'default';
     card.innerHTML = `
       <div class="ccard-top">
         <div class="avatar" style="background:${col}" onclick="openFicha(${idx})">${ini}</div>
@@ -925,13 +722,13 @@ function renderList() {
         </div>
         <span class="cbadge ${bc}" title="${c.estatus}">${c.estatus.length>12?c.estatus.slice(0,11)+'…':c.estatus||'—'}</span>
       </div>
-      <div class="msg-loading" id="${loadId}"><div class="spinner"></div>Generando mensaje…</div>
-      <div class="msg-preview${c.msg?' show':''}" id="${msgId}">${c.msg||''}</div>
+      <div class="msg-loading" id="ld${idx}"><div class="spinner"></div>Generando mensaje…</div>
+      <div class="msg-preview${c.msg?' show':''}" id="msg${idx}">${c.msg||''}</div>
       <div class="ccard-btns">
         <button class="cbt gen" onclick="genForClient(${idx})"><span class="ci">${c.msg?'🔄':'✨'}</span>${c.msg?'Regen':'Generar'}</button>
-        <button class="cbt wa${c.whatsapp&&c.msg?'':' off'}" id="${waId}" onclick="openWAClient(${idx})"><span class="ci">💬</span>WhatsApp</button>
+        <button class="cbt wa${c.whatsapp&&c.msg?'':' off'}" id="wa${idx}" onclick="openWAClient(${idx})"><span class="ci">💬</span>WhatsApp</button>
         <button class="cbt cp" onclick="copyClient(${idx})"><span class="ci">📋</span>Copiar</button>
-        <button class="cbt chk${c.contacted?' done':''}" id="${chkId}" onclick="toggleContacted(${idx})"><span class="ci">${c.contacted?'✅':'☐'}</span>${c.contacted?'Listo':'Marcar'}</button>
+        <button class="cbt chk${c.contacted?' done':''}" id="chk${idx}" onclick="toggleContacted(${idx})"><span class="ci">${c.contacted?'✅':'☐'}</span>${c.contacted?'Listo':'Marcar'}</button>
       </div>`;
     el.appendChild(card);
   });
@@ -939,7 +736,7 @@ function renderList() {
 
 function filterClients() {
   const q = elId('srch').value.toLowerCase();
-  filtered = clients.filter(c => c.nombre.toLowerCase().includes(q) || c.whatsapp.includes(q));
+  filtered = clients.filter(c => c.nombre.toLowerCase().includes(q) || (c.whatsapp||'').includes(q));
   renderList();
 }
 function updateStats() {
@@ -955,192 +752,137 @@ function togglePending() {
   renderList();
 }
 
-// ══ GENERAR MENSAJE ════════════════════════════════════════════
+// ══ GENERAR MENSAJE ═══════════════════════════════════════════
 async function genForClient(idx) {
-  if (!selectedMood) {
-    toast('Elige un mood primero ↑', 'err');
-    openPanel();
-    return;
-  }
+  if (!selectedMood) { toast('Elige un mood primero ↑','err'); openPanel(); return; }
   const c = clients[idx];
-  const loadEl = elId('ld' + idx);
-  const msgEl  = elId('msg' + idx);
-  const waEl   = elId('wa' + idx);
-  if (loadEl) { loadEl.classList.add('show'); }
-  if (msgEl)  { msgEl.classList.remove('show'); }
-  const v = opts.antispam ? Math.floor(Math.random() * 3) + 1 : 1;
+  const loadEl=elId('ld'+idx), msgEl=elId('msg'+idx), waEl=elId('wa'+idx);
+  if(loadEl) loadEl.classList.add('show');
+  if(msgEl)  msgEl.classList.remove('show');
+  const v = opts.antispam ? Math.floor(Math.random()*3)+1 : 1;
   const ml = getMoodLabel(selectedMood);
-  // Determinar tipo de cobranza (por cliente o mood global)
   let extra_context = '';
   const cobTipo = c._cobranzaTipo || (selectedMood.startsWith('cobranza_') ? selectedMood.replace('cobranza_','') : null);
-  if (cobTipo === 'migracion') {
-    const precio = precioDeEstatus(c.estatus);
-    const monto = precio ? parseInt(precio.replace(/[^\d]/g,'')) : 0;
-    const normal = monto * 10;
-    const desc = parseInt(c._descuento || '0') || 0;
-    const final = desc ? normal - desc : normal;
-    if (monto) {
-      extra_context = desc
-        ? `\nPrecio de migración a permanente: normalmente sería $${normal} MXN (su mensualidad de $${monto} × 10), pero con el descuento especial de $${desc} MXN queda en $${final} MXN. Con ese único pago se olvida para siempre de las mensualidades.`
-        : `\nPrecio de migración a permanente: $${normal} MXN pago único (su mensualidad de $${monto} × 10 meses). Con ese único pago se olvida para siempre de las mensualidades.`;
-    } else {
-      extra_context = '\nExplica que con un pago único se olvida para siempre de las mensualidades. Pídele que te pregunte el precio de su migración.';
-    }
-    extra_context += '\nMenciona que la academia está migrando al modelo de acceso permanente.';
+  if (cobTipo==='migracion') {
+    const precio=precioDeEstatus(c.estatus), monto=precio?parseInt(precio.replace(/[^\d]/g,'')):0;
+    const normal=monto*10, desc=parseInt(c._descuento||'0')||0, final=desc?normal-desc:normal;
+    if(monto) extra_context=desc?`\nPrecio migración a permanente: normalmente $${normal} MXN ($${monto}×10), con descuento especial de $${desc} queda en $${final} MXN.`:`\nPrecio migración a permanente: $${normal} MXN pago único ($${monto}×10).`;
+    else extra_context='\nExplica que con un pago único se olvida para siempre de mensualidades. Pídele el precio de su migración.';
+    extra_context+='\nMenciona que la academia migra al modelo de acceso permanente.';
   }
-  if (cobTipo === 'anualidad_viejitos') {
-    const precio = precioDeEstatus(c.estatus);
-    if (precio) {
-      const monto = parseInt(precio.replace(/[^\d]/g,''));
-      extra_context = `\nOferta anualidad: $${monto * 10} MXN pago único = acceso permanente para siempre. Este precio es su mensualidad de $${monto} × 10 meses.`;
-    }
+  if (cobTipo==='anualidad_viejitos') {
+    const precio=precioDeEstatus(c.estatus);
+    if(precio){const monto=parseInt(precio.replace(/[^\d]/g,'')); extra_context=`\nOferta anualidad: $${monto*10} MXN pago único = acceso permanente para siempre.`;}
   }
-  // Promo curso context
-  if (selectedMood === 'promo_curso') {
-    const nombre = elId('promoCursoNombre')?.value?.trim() || '';
-    const info   = elId('promoCursoInfo')?.value?.trim() || '';
-    if (nombre) extra_context += `\nCurso a promocionar: ${nombre}.`;
-    if (info)   extra_context += `\nDetalles del curso: ${info}`;
+  if (selectedMood==='promo_curso') {
+    const nombre=elId('promoCursoNombre')?.value?.trim()||'', info=elId('promoCursoInfo')?.value?.trim()||'';
+    if(nombre) extra_context+=`\nCurso a promocionar: ${nombre}.`;
+    if(info)   extra_context+=`\nDetalles: ${info}`;
   }
+  const isCobranzaMsg = cobTipo || selectedMood==='cobranza';
+  const prompt=`Eres Ricardo Flores, fundador de la Academia Luz Arcana. Escribe un mensaje de WhatsApp en tu voz personal para este alumno.
 
-  const isCobranzaMsg = cobTipo || selectedMood === 'cobranza';
-  const prompt = `Eres Ricardo Flores, fundador de la Academia Luz Arcana. Escribe un mensaje de WhatsApp en tu voz personal para este alumno.
-
-VOZ DE RICARDO — escribe exactamente así:
-- Español mexicano natural. Usa "tú" nunca "vos". 
-- Tuteo mexicano: "¿cómo estás?", "te cuento", "mira", "oye", "sale", "ándale", "te lo digo directo".
-- Jiribilla muy suave y natural — un toque de humor o calidez sin exagerar. Nada forzado.
-- Emojis: 2 o 3 máximo, bien puestos, que sumen al mensaje no que lo adornen.
-- Frases cortas para lo importante, un poco más largas para explicar.
+VOZ DE RICARDO:
+- Español mexicano natural. Usa "tú" nunca "vos".
+- Tuteo mexicano: "¿cómo estás?", "te cuento", "mira", "oye", "sale", "ándale".
+- Jiribilla muy suave — un toque de calidez sin exagerar.
+- Emojis: 2 o 3 máximo.
 - Cálido pero no cursi. Directo pero no frío. Espiritual pero aterrizado.
-- NUNCA suenes corporativo, nunca como gurú perfecto, nunca como vendedor de humo.
-- NUNCA uses frases artificiales tipo "en Luz Arcana creemos en tu crecimiento".
+- NUNCA suenes corporativo ni vendedor de humo.
 
 ALUMNO:
 - Nombre: ${firstName(c.nombre)}
 - Estatus: ${c.estatus}
 - Membresía: ${c.membresia||'no especificada'}
-- Día de cobro: ${c.dias_cobro ? 'día '+c.dias_cobro : 'no especificado'}
+- Día de cobro: ${c.dias_cobro?'día '+c.dias_cobro:'no especificado'}
 - Notas: ${c.notas||'ninguna'}
 
-INTENCIÓN DEL MENSAJE: ${ml}
+INTENCIÓN: ${ml}
 ${extra_context}
 
-REGLAS ESTRICTAS:
-- SOLO el cuerpo del mensaje, sin comillas ni explicaciones externas
+REGLAS:
+- SOLO el cuerpo del mensaje, sin comillas ni explicaciones
 - Saluda solo con el primer nombre
 - Máximo 4-5 oraciones
-- Máximo 2 emojis
 - NO incluyas datos de pago (van aparte)
-- Variante #${v} — varía ligeramente la entrada para evitar mensajes idénticos
-${isCobranzaMsg ? `- SIEMPRE incluye el precio específico en el mensaje (ya viene en el contexto arriba)
-- NUNCA digas que el pago da acceso a "todos los cursos" — cada alumno tiene acceso solo a los cursos de su plan
-- El mensaje debe ser directo sobre el cobro, sin rodeos, pero con calidez` : ''}
+- Variante #${v}
+${isCobranzaMsg?`- Incluye el precio específico\n- NUNCA digas que el pago da acceso a "todos los cursos"\n- Directo sobre el cobro, con calidez`:''}
 - Firma al final: *Ricardo / Luz Arcana*`;
 
   try {
-    const res = await fetch(API_ENDPOINT, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-haiku-4-5',
-        max_tokens: 500,
-        messages: [{ role: 'user', content: prompt }]
-      })
-    });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error?.message || 'Error ' + res.status);
-    }
-    const data = await res.json();
-    let msg = (data.content || []).map(b => b.text || '').join('').trim();
-    if (opts.pago) msg += DATOS_PAGO;
-    c.msg = msg;
-    if (loadEl) loadEl.classList.remove('show');
-    if (msgEl)  { msgEl.textContent = msg; msgEl.classList.add('show'); }
-    if (waEl)   waEl.classList.remove('off');
-    // Actualizar botón generar a "Regen"
-    const genBtn = msgEl?.closest('.ccard')?.querySelector('.cbt.gen');
-    if (genBtn) genBtn.innerHTML = '<span class="ci">🔄</span>Regen';
+    const res = await fetch(API_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-haiku-4-5',max_tokens:500,messages:[{role:'user',content:prompt}]})});
+    if(!res.ok){const err=await res.json().catch(()=>({}));throw new Error(err.error?.message||'Error '+res.status);}
+    const data=await res.json();
+    let msg=(data.content||[]).map(b=>b.text||'').join('').trim();
+    if(opts.pago) msg+=DATOS_PAGO;
+    c.msg=msg;
+    if(loadEl) loadEl.classList.remove('show');
+    if(msgEl){msgEl.textContent=msg;msgEl.classList.add('show');}
+    if(waEl) waEl.classList.remove('off');
+    const genBtn=msgEl?.closest('.ccard')?.querySelector('.cbt.gen');
+    if(genBtn) genBtn.innerHTML='<span class="ci">🔄</span>Regen';
   } catch(e) {
-    if (loadEl) loadEl.classList.remove('show');
-    toast('Error: ' + e.message, 'err');
+    if(loadEl) loadEl.classList.remove('show');
+    toast('Error: '+e.message,'err');
   }
 }
 
 function openWAClient(idx) {
-  const c = clients[idx];
-  if (!c.msg)      { toast('Genera el mensaje primero', 'err'); return; }
-  if (!c.whatsapp) { toast('Este cliente no tiene teléfono', 'err'); return; }
-  window.open('https://wa.me/' + c.whatsapp + '?text=' + encodeURIComponent(c.msg), '_blank');
-  // Auto-marcar como contactado
-  c.contacted = true;
-  updateStats();
-  const chkEl = elId('chk' + idx);
-  if (chkEl) { chkEl.classList.add('done'); chkEl.innerHTML = '<span class="ci">✅</span>Listo'; }
-  const card = chkEl?.closest('.ccard');
-  if (card) card.classList.add('sent');
+  const c=clients[idx];
+  if(!c.msg){toast('Genera el mensaje primero','err');return;}
+  if(!c.whatsapp){toast('Este cliente no tiene teléfono','err');return;}
+  window.open('https://wa.me/'+c.whatsapp+'?text='+encodeURIComponent(c.msg),'_blank');
+  c.contacted=true; updateStats();
+  const chkEl=elId('chk'+idx);
+  if(chkEl){chkEl.classList.add('done');chkEl.innerHTML='<span class="ci">✅</span>Listo';}
+  const card=chkEl?.closest('.ccard');
+  if(card) card.classList.add('sent');
 }
-
 function copyClient(idx) {
-  const c = clients[idx];
-  if (!c.msg) { toast('Genera el mensaje primero', 'err'); return; }
-  navigator.clipboard.writeText(c.msg).then(() => toast('Copiado 📋', 'ok'));
+  const c=clients[idx];
+  if(!c.msg){toast('Genera el mensaje primero','err');return;}
+  navigator.clipboard.writeText(c.msg).then(()=>toast('Copiado 📋','ok'));
 }
+function toggleContacted(idx){clients[idx].contacted=!clients[idx].contacted;updateStats();renderList();}
 
-function toggleContacted(idx) {
-  clients[idx].contacted = !clients[idx].contacted;
-  updateStats();
-  renderList();
-}
-
-// ══ FICHA MODAL ═══════════════════════════════════════════════
+// ══ FICHA MODAL ══════════════════════════════════════════════
 function openFicha(idx) {
-  const c = clients[idx];
-  const col = aColor(c.nombre);
-  elId('fichaAv').style.background = col;
-  elId('fichaAv').textContent = c.nombre.charAt(0).toUpperCase();
-  elId('fichaNom').textContent = c.nombre;
-  const _ef = c.estatus.toLowerCase();
-  const estatusColor = _ef.includes('permanente')   ? '#9b7de0'
-    : _ef.includes('embajador')                     ? '#c9a84c'
-    : _ef.includes('beca')                          ? '#7a9fe0'
-    : _ef.includes('conflictiva')                   ? '#e06090'
-    : _ef.includes('prueba')                        ? '#a0c060'
-    : _ef.includes('activo')                        ? '#4caf7c'
-    : _ef.includes('revocado')                      ? '#cf6679' : '#8a7fa0';
-  elId('fichaSt').innerHTML = '<span style="background:'+estatusColor+'22;color:'+estatusColor+';padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700">'+c.estatus+'</span>';
-  const ins = diasConNosotros(c.fecha_ins);
-  const fields = [
-    { l:'📅 Inscripción',          v: ins ? ins.fecha : (c.fecha_ins || '—') },
-    { l:'⏳ Tiempo con nosotros',  v: ins ? formatDias(ins.dias) : (c.dias_trans ? c.dias_trans + ' días' : '—') },
-    { l:'🗓 Día de cobro',         v: c.dias_cobro ? 'Día ' + c.dias_cobro + ' de cada mes' : '—' },
-    { l:'💰 Precio mensual',       v: precioDeEstatus(c.estatus) || '—' },
-    { l:'📱 WhatsApp',             v: c.whatsapp  || '—' },
-    { l:'📱 WA adicional',         v: c.wa_adicional || '—' },
-    { l:'📧 Correo',               v: c.correo    || '—' },
-    { l:'🌍 Estado',               v: c.whatsapp ? getEstado(c.whatsapp) : '—' },
-    { l:'🔗 Procedencia',          v: c.procedencia || '—' },
-    { l:'📝 Notas',                v: c.notas     || '—' },
+  const c=clients[idx], col=aColor(c.nombre);
+  elId('fichaAv').style.background=col;
+  elId('fichaAv').textContent=c.nombre.charAt(0).toUpperCase();
+  elId('fichaNom').textContent=c.nombre;
+  const _ef=c.estatus.toLowerCase();
+  const ec=_ef.includes('permanente')?'#9b7de0':_ef.includes('embajador')?'#c9a84c':_ef.includes('beca')?'#7a9fe0':_ef.includes('conflictiva')?'#e06090':_ef.includes('prueba')?'#a0c060':_ef.includes('activo')?'#4caf7c':_ef.includes('revocado')?'#cf6679':'#8a7fa0';
+  elId('fichaSt').innerHTML='<span style="background:'+ec+'22;color:'+ec+';padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700">'+c.estatus+'</span>';
+  const ins=diasConNosotros(c.fecha_ins);
+  const fields=[
+    {l:'📅 Inscripción',         v:ins?ins.fecha:(c.fecha_ins||'—')},
+    {l:'⏳ Tiempo con nosotros', v:ins?formatDias(ins.dias):(c.dias_trans?c.dias_trans+' días':'—')},
+    {l:'🗓 Día de cobro',        v:c.dias_cobro?'Día '+c.dias_cobro+' de cada mes':'—'},
+    {l:'💰 Precio mensual',      v:precioDeEstatus(c.estatus)||'—'},
+    {l:'💳 Medio de pago',       v:c.medio_pago||'—'},
+    {l:'📱 WhatsApp',            v:c.whatsapp||'—'},
+    {l:'📱 WA adicional',        v:c.wa_adicional||'—'},
+    {l:'📧 Correo',              v:c.correo||'—'},
+    {l:'🌍 Estado',              v:c.whatsapp?getEstado(c.whatsapp):'—'},
+    {l:'🔗 Procedencia',         v:c.procedencia||'—'},
+    {l:'👤 Tutor',               v:c.tutor||'—'},
+    {l:'📝 Notas',               v:c.notas||'—'},
   ];
-  elId('fichaFields').innerHTML = fields.map(f =>
-    `<div class="modal-field"><div class="lbl">${f.l}</div><div class="val">${f.v}</div></div>`
-  ).join('');
-  // Show cobranza subtypes if mood is cobranza
-  const isCobranza = selectedMood && selectedMood.includes('cobranza');
-  const cobranzaBox = elId('fichaCobranzaOpts');
-  cobranzaBox.style.display = isCobranza ? 'block' : 'none';
-  if (isCobranza) {
-    const precio = precioDeEstatus(c.estatus);
-    const monto = precio ? parseInt(precio.replace(/[^\d]/g,'')) : 0;
-    const anualidad = monto ? monto * 10 : null;
-    const btns = elId('fichaCobranzaBtns');
-    btns.innerHTML = `
-      <button onclick="setCobranzaTipo('normal', ${clients.indexOf(c)})" style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:9px 12px;text-align:left;cursor:pointer;color:var(--text);font-family:Lato,sans-serif;width:100%">
+  elId('fichaFields').innerHTML=fields.map(f=>`<div class="modal-field"><div class="lbl">${f.l}</div><div class="val">${f.v}</div></div>`).join('');
+  const isCobranza=selectedMood&&selectedMood.includes('cobranza');
+  const cobranzaBox=elId('fichaCobranzaOpts');
+  cobranzaBox.style.display=isCobranza?'block':'none';
+  if(isCobranza){
+    const precio=precioDeEstatus(c.estatus), monto=precio?parseInt(precio.replace(/[^\d]/g,'')):0;
+    const anualidad=monto?monto*10:null;
+    const btns=elId('fichaCobranzaBtns');
+    btns.innerHTML=`
+      <button onclick="setCobranzaTipo('normal',${clients.indexOf(c)})" style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:9px 12px;text-align:left;cursor:pointer;color:var(--text);font-family:Lato,sans-serif;width:100%">
         <div style="font-size:12px;font-weight:700">💸 Cobranza normal</div>
         <div style="font-size:10px;color:var(--muted)">Recordatorio de mensualidad ${precio||''}</div>
       </button>
-      <button onclick="setCobranzaTipo('migracion', ${clients.indexOf(c)})" style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:9px 12px;text-align:left;cursor:pointer;color:var(--text);font-family:Lato,sans-serif;width:100%">
+      <button onclick="setCobranzaTipo('migracion',${clients.indexOf(c)})" style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:9px 12px;text-align:left;cursor:pointer;color:var(--text);font-family:Lato,sans-serif;width:100%">
         <div style="font-size:12px;font-weight:700">⭐ Migración a permanente</div>
         <div style="font-size:10px;color:var(--muted)">Ya no habrá mensualidades — con descuento especial</div>
         <div style="display:flex;align-items:center;gap:6px;margin-top:5px">
@@ -1148,177 +890,275 @@ function openFicha(idx) {
           <input type="number" id="descuentoFicha_${clients.indexOf(c)}" placeholder="monto" onclick="event.stopPropagation()" style="width:80px;background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;padding:4px 8px;outline:none">
         </div>
       </button>
-      ${anualidad ? `<button onclick="setCobranzaTipo('anualidad_viejitos', ${clients.indexOf(c)})" style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:9px 12px;text-align:left;cursor:pointer;color:var(--text);font-family:Lato,sans-serif;width:100%">
+      ${anualidad?`<button onclick="setCobranzaTipo('anualidad_viejitos',${clients.indexOf(c)})" style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:9px 12px;text-align:left;cursor:pointer;color:var(--text);font-family:Lato,sans-serif;width:100%">
         <div style="font-size:12px;font-weight:700">🎉 Anualidad — $${anualidad}</div>
         <div style="font-size:10px;color:var(--muted)">Pago único = acceso para siempre (${precio} × 10)</div>
-      </button>` : ''}
-    `;
+      </button>`:''}`;
   }
   elId('fichaOverlay').classList.add('show');
 }
-function closeFicha() { elId('fichaOverlay').classList.remove('show'); }
-
-function setCobranzaTipo(tipo, idx) {
-  const c = clients[idx];
-  // Store tipo on the client object
-  c._cobranzaTipo = tipo;
-  // Get descuento if migration
-  if (tipo === 'migracion') {
-    const descInput = elId('descuentoFicha_' + idx);
-    c._descuento = descInput ? descInput.value : '';
-  }
-  closeFicha();
-  // Trigger generation
-  genForClient(idx);
+function closeFicha(){elId('fichaOverlay').classList.remove('show');}
+function setCobranzaTipo(tipo,idx){
+  const c=clients[idx]; c._cobranzaTipo=tipo;
+  if(tipo==='migracion'){const d=elId('descuentoFicha_'+idx); c._descuento=d?d.value:'';}
+  closeFicha(); genForClient(idx);
 }
 
-// ══ PLANTILLA CSV ═════════════════════════════════════════════
-function downloadTemplate() {
-  const cols = 'Días transcurridos,Fecha de inscripcion,Dias de cobro,Nombre,Apellido,Correo,Pagina de procedencia,Whatsapp adicional,WhatsApp,estatus,Membresia,Notas';
-  const ejemplo = ',15/01/2024,1,María,González,maria@gmail.com,Instagram,+5215512345678,+5215512345678,activo $197,,';
-  const csv = cols + '\n' + ejemplo;
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'plantilla_luz_arcana.csv';
-  a.click();
-  toast('Plantilla descargada 📥', 'ok');
-}
-
-// ══ CONTROLES ═════════════════════════════════════════════════
+// ══ CONTROLES ════════════════════════════════════════════════
 function resetList() {
-  if (!confirm('¿Cambiar la lista? Se borrarán los clientes y mensajes actuales.')) return;
-  clients = []; filtered = [];
-  elId('ctrlBar').style.display = 'none';
-  elId('listControls').style.display = 'none';
-  elId('clientScroll').style.display = 'none';
-  elId('loadScreen').style.display = 'flex';
-  elId('pasteArea').value = '';
-  elId('fileInput').value = '';
-  elId('sheetsStatus').textContent = '';
+  if(!confirm('¿Cargar otra BD? Se borrarán los clientes actuales.')) return;
+  clients=[]; filtered=[];
+  elId('ctrlBar').style.display='none';
+  elId('listControls').style.display='none';
+  elId('clientScroll').style.display='none';
+  elId('autoloadScreen').style.display='none';
+  elId('loadScreen').style.display='flex';
+  elId('pasteArea').value='';
+  elId('fileInput').value='';
+  elId('sheetsStatus').textContent='';
   updateStats();
-  toast('Lista borrada. Carga una nueva.', 'ok');
 }
-function resetMsgs() {
-  if (!confirm('¿Borrar todos los mensajes generados?')) return;
-  clients.forEach(c => c.msg = '');
-  renderList();
-  toast('Mensajes borrados ✓', 'ok');
-}
-function resetContacted() {
-  clients.forEach(c => c.contacted = false);
-  updateStats(); renderList();
-  toast('Enviados reseteados ☐', 'ok');
-}
+function resetMsgs(){if(!confirm('¿Borrar todos los mensajes generados?'))return;clients.forEach(c=>c.msg='');renderList();toast('Mensajes borrados ✓','ok');}
+function resetContacted(){clients.forEach(c=>c.contacted=false);updateStats();renderList();toast('Enviados reseteados ☐','ok');}
 
-// ══ AVISO COMUNITARIO ══════════════════════════════════════════
-function filtrarBD() {
-  if (!clients.length) { toast('Primero carga la lista en la pestaña Mensajes', 'err'); return; }
-  const dia = elId('avisoDia').value.trim();
-  const found = dia
-    ? clients.filter(c => c.dias_cobro === dia)
-    : [...clients];
-  elId('avisoBDInfo').textContent = found.length + ' clientes' + (dia ? ' con día ' + dia : ' en total') + '.';
-  // Store for generarAviso
-  window._avisoClients = found;
-  toast(found.length + ' listos para aviso ✓', 'ok');
+// ══ DATOS DE ALUMNO ══════════════════════════════════════════
+function diasConNosotros(fechaStr) {
+  if(!fechaStr) return null;
+  const s=fechaStr.trim(); let d=null;
+  if(/^\d{4}-\d{2}-\d{2}/.test(s)) d=new Date(s.slice(0,10));
+  else if(/^\d{1,2}\/\d{1,2}\/\d{4}/.test(s)){const[day,mon,yr]=s.split('/');d=new Date(parseInt(yr),parseInt(mon)-1,parseInt(day));}
+  else if(/^\d{4,5}$/.test(s)){d=new Date((parseInt(s)-25569)*86400*1000);}
+  if(!d||isNaN(d.getTime())) return null;
+  const diff=Math.floor((new Date()-d)/(1000*60*60*24));
+  return {fecha:d.toLocaleDateString('es-MX',{day:'numeric',month:'long',year:'numeric'}),dias:diff};
 }
+function formatDias(n){if(n===null)return'—';if(n<30)return n+' días';if(n<365)return Math.floor(n/30)+' meses y '+(n%30)+' días';const yrs=Math.floor(n/365);const rest=Math.floor((n%365)/30);return yrs+(yrs===1?' año':' años')+(rest>0?' y '+rest+' meses':'');}
+function precioDeEstatus(est){const m=est.match(/\$?\s*(\d{2,4})/);return m?'$'+m[1]+'/mes':null;}
+function getEstado(wa){const d=wa.replace(/\D/g,'');const n=d.startsWith('52')?d.slice(2):d;return LADAS[n.slice(0,3)]||LADAS[n.slice(0,2)]||'México';}
+function mailPrefix(m){if(!m)return'sin-correo@';const s=m.split(',')[0].trim();const i=s.indexOf('@');return i>0?s.slice(0,i)+'@':s;}
 
-function generarAviso() {
-  const fecha = elId('avisoFecha').value.trim() || 'próximo día de cobro';
-  // Use filtered clients or all clients
-  const source = window._avisoClients || clients;
-  if (!source.length) { toast('Filtra primero la lista (botón Filtrar)', 'err'); return; }
-  const entries = source.map(c => {
-    return firstName(c.nombre) + ' - ' + (c.whatsapp ? getEstado(c.whatsapp) : 'México') + ' - ' + mailPrefix(c.correo);
-  }).filter(Boolean);
-  if (!entries.length) { toast('No hay datos para generar el aviso', 'err'); return; }
-  const msg = `*Lista de pagos pendientes para el ${fecha}:*\n\n` + entries.join('\n')
-    + `\n\n_Este recordatorio protege tu privacidad. Solo aparece tu nombre, estado y el inicio de tu correo._\n_Si no quieres aparecer:_\n1. Paga anticipado 😅\n2. Avísanos para coordinar\n\n¡Gracias por su comprensión! 🙏✨\n*Equipo Luz Arcana*`;
-  elId('avisoMsg').textContent = msg;
-  elId('avisoResult').style.display = 'block';
-  toast('Aviso generado ✓', 'ok');
-}
-function copyAviso() {
-  const m = elId('avisoMsg').textContent;
-  if (m) navigator.clipboard.writeText(m).then(() => toast('Copiado 📋', 'ok'));
+// ══ NAV ══════════════════════════════════════════════════════
+function showNav(name){
+  ['mensajes','aviso','conv','leads'].forEach(s=>{
+    const p=elId('page-'+s);
+    p.style.display=s===name?'flex':'none';
+    if(s===name) p.style.flexDirection='column';
+    elId('nav-'+s).classList.toggle('on',s===name);
+  });
+  if(name==='leads'&&!leads.length) loadLeads();
 }
 
-// ══ ANÁLISIS CONVERSACIÓN ══════════════════════════════════════
-function loadConvFile(file) {
-  if (!file) return;
-  const r = new FileReader();
-  r.onload = e => { elId('convText').value = e.target.result; swConv('paste'); };
-  r.onerror = () => toast('Error leyendo el archivo', 'err');
-  r.readAsText(file, 'utf-8');
+// ══ PANEL MOOD ═══════════════════════════════════════════════
+function togglePanel(){elId('topPanel').classList.toggle('collapsed');}
+function openPanel(){elId('topPanel').classList.remove('collapsed');}
+function closePanel(){elId('topPanel').classList.add('collapsed');}
+function pickMood(btn,mood){
+  document.querySelectorAll('.mood-btn').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on'); selectedMood=mood; elId('customMood').value='';
+  const label=getMoodLabel(mood).split('—')[0].split('(')[0].trim();
+  elId('panelTitle').textContent='🎭 '+label+' · toca para cambiar';
+  elId('promoCursoBox').style.display=mood==='promo_curso'?'block':'none';
+  closePanel();
+}
+function pickCustomMood(){
+  const v=elId('customMood').value.trim(); if(!v) return;
+  document.querySelectorAll('.mood-btn').forEach(b=>b.classList.remove('on'));
+  selectedMood='custom:'+v;
+  elId('panelTitle').textContent='🎭 '+v+' · toca para cambiar';
+  closePanel();
+}
+function getMoodLabel(mood){
+  if(!mood) return '(sin mood)';
+  if(mood.startsWith('custom:')) return mood.replace('custom:','').trim();
+  return {cobranza:'Cobranza — recordatorio amable de pago pendiente',cobranza_normal:'Cobranza — recordatorio amable de mensualidad pendiente',cobranza_migracion:'Cobranza migración a permanente',cobranza_anualidad_viejitos:'Cobranza anualidad alumnos antiguos',bienvenida:'Bienvenida — cliente nuevo entrando a la academia',reactivacion:'Reactivación — cliente que dejó de pagar, invitarlo a volver',levanta_muertos:'Levanta muertos — sin actividad larga, tono muy personal y emotivo',upgrade:'Upgrade permanente ($620 individual o $1,100 bundle 2 cursos)',anualidad:'Anualidad — acceso completo un año por $3,500',promo_curso:'Promo de curso específico de la academia',complementario:'Curso complementario — ya tiene uno, ofrecerle el siguiente'}[mood]||mood;
+}
+function togOpt(k){opts[k]=!opts[k];elId('tog-'+k).classList.toggle('on',opts[k]);}
+
+// ══ TABS ════════════════════════════════════════════════════
+function swtab(n){
+  document.querySelectorAll('#loadScreen .tab').forEach((b,i)=>b.classList.toggle('on',['paste','file','sheets'][i]===n));
+  document.querySelectorAll('#loadScreen .tab-panel').forEach(p=>p.classList.remove('on'));
+  elId('tab-'+n).classList.add('on');
+}
+function swConv(n){
+  document.querySelectorAll('#page-conv .tab').forEach((b,i)=>b.classList.toggle('on',['paste','file'][i]===n));
+  ['conv-paste','conv-file'].forEach(id=>elId(id).classList.remove('on'));
+  elId('conv-'+n).classList.add('on');
 }
 
-async function analyzeConv() {
-  const text  = elId('convText').value.trim();
-  const cname = elId('convClient').value.trim();
-  if (!text) { toast('Pega la conversación primero', 'err'); return; }
-  elId('convResult').style.display = 'block';
-  elId('convLoad').style.display = 'flex';
-  ['tempCard','convSumBox','convMoodBox','convMsgBox','convActions'].forEach(id => elId(id).style.display = 'none');
-  const snippet = text.length > 6000 ? text.slice(-6000) : text;
-  const prompt = `Eres experto en marketing de la Academia Luz Arcana (cursos espirituales: Tarot, Runas, Astrología, Numerología, Herbolaria, Yoga, etc.).
+// ══ PLANTILLA CSV ════════════════════════════════════════════
+function downloadTemplate(){
+  const cols='Tutor,WA_adicional,WhatsApp,Dias_transcurridos,Fecha_inscripcion,Dias_cobro,Nombre,Apellido,Correo,Procedencia,WA_adicional2,WhatsApp2,Estatus,Membresia,Medio_pago,Notas,Afiliado';
+  const ejemplo=',,+5215512345678,,15/01/2024,1,María,González,maria@gmail.com,Instagram,,,activo $197,mensual,transferencia,,';
+  const csv=cols+'\n'+ejemplo;
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='plantilla_luz_arcana.csv'; a.click();
+  toast('Plantilla descargada 📥','ok');
+}
 
-Analiza esta conversación de WhatsApp entre Ricardo (dueño de Luz Arcana) y ${cname || 'el cliente'}.
+// ══ AVISO COMUNITARIO ════════════════════════════════════════
+function filtrarBD(){
+  if(!clients.length){toast('Primero carga la lista en la pestaña Mensajes','err');return;}
+  const dia=elId('avisoDia').value.trim();
+  const found=dia?clients.filter(c=>c.dias_cobro===dia):[...clients];
+  elId('avisoBDInfo').textContent=found.length+' clientes'+(dia?' con día '+dia:' en total')+'.';
+  window._avisoClients=found;
+  toast(found.length+' listos para aviso ✓','ok');
+}
+function generarAviso(){
+  const fecha=elId('avisoFecha').value.trim()||'próximo día de cobro';
+  const source=window._avisoClients||clients;
+  if(!source.length){toast('Filtra primero la lista','err');return;}
+  const entries=source.map(c=>firstName(c.nombre)+' - '+(c.whatsapp?getEstado(c.whatsapp):'México')+' - '+mailPrefix(c.correo));
+  const msg=`*Lista de pagos pendientes para el ${fecha}:*\n\n`+entries.join('\n')+`\n\n_Este recordatorio protege tu privacidad. Solo aparece tu nombre, estado y el inicio de tu correo._\n_Si no quieres aparecer:_\n1. Paga anticipado 😅\n2. Avísanos para coordinar\n\n¡Gracias por su comprensión! 🙏✨\n*Equipo Luz Arcana*`;
+  elId('avisoMsg').textContent=msg;
+  elId('avisoResult').style.display='block';
+  toast('Aviso generado ✓','ok');
+}
+function copyAviso(){const m=elId('avisoMsg').textContent;if(m)navigator.clipboard.writeText(m).then(()=>toast('Copiado 📋','ok'));}
 
-CONVERSACIÓN:
-${snippet}
+// ══ ANÁLISIS CONVERSACIÓN ════════════════════════════════════
+function loadConvFile(file){
+  if(!file) return;
+  const r=new FileReader();
+  r.onload=e=>{elId('convText').value=e.target.result;swConv('paste');};
+  r.onerror=()=>toast('Error leyendo el archivo','err');
+  r.readAsText(file,'utf-8');
+}
+async function analyzeConv(){
+  const text=elId('convText').value.trim(), cname=elId('convClient').value.trim();
+  if(!text){toast('Pega la conversación primero','err');return;}
+  elId('convResult').style.display='block';
+  elId('convLoad').style.display='flex';
+  ['tempCard','convSumBox','convMoodBox','convMsgBox','convActions'].forEach(id=>elId(id).style.display='none');
+  const snippet=text.length>6000?text.slice(-6000):text;
+  const prompt=`Eres experto en marketing de la Academia Luz Arcana (cursos espirituales: Tarot, Runas, Astrología, Numerología, Herbolaria, Yoga, etc.).\n\nAnaliza esta conversación de WhatsApp entre Ricardo (dueño de Luz Arcana) y ${cname||'el cliente'}.\n\nCONVERSACIÓN:\n${snippet}\n\nResponde ÚNICAMENTE con un objeto JSON válido, sin markdown, sin texto adicional:\n{"temperatura":"fria|tibia|caliente|muy_caliente","score":5,"resumen":"2-3 oraciones sobre nivel de implicación y actitud del cliente","mood_recomendado":"cobranza|bienvenida|reactivacion|levanta_muertos|upgrade|anualidad|promo_curso|complementario","mood_razon":"1 frase explicando por qué ese mood","mensaje":"mensaje completo listo para enviar, tono espiritual y cálido, firma: *Equipo Luz Arcana ✨*"}`;
+  try{
+    const res=await fetch(API_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-haiku-4-5',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
+    if(!res.ok) throw new Error('Error '+res.status);
+    const data=await res.json();
+    const raw=(data.content||[]).map(b=>b.text||'').join('').trim().replace(/^```json|^```|```$/gm,'').trim();
+    const result=JSON.parse(raw);
+    const tmap={fria:{i:'🧊',l:'Fría',c:'#4fa3e0'},tibia:{i:'🌤️',l:'Tibia',c:'#e0a84f'},caliente:{i:'🔥',l:'Caliente',c:'var(--green)'},muy_caliente:{i:'🚀',l:'¡Muy caliente!',c:'var(--gold)'}};
+    const t=tmap[result.temperatura]||{i:'🌡️',l:result.temperatura,c:'var(--muted)'};
+    elId('convLoad').style.display='none';
+    const tc=elId('tempCard');tc.style.display='block';tc.style.borderColor=t.c;
+    elId('tempIcon').textContent=t.i;
+    elId('tempLabel').innerHTML=`<span style="color:${t.c}">${t.l}</span>`;
+    elId('tempScore').textContent='Implicación: '+result.score+'/10';
+    elId('convSumBox').style.display='block';elId('convSum').textContent=result.resumen;
+    elId('convMoodBox').style.display='block';
+    elId('convMoodSug').textContent=getMoodLabel(result.mood_recomendado).split('—')[0].trim();
+    elId('convMoodReason').textContent=result.mood_razon;
+    elId('convMsgBox').style.display='block';elId('convMsg').textContent=result.mensaje;
+    elId('convActions').style.display='grid';
+    convWAPhone='';
+    if(cname){const m=clients.find(c=>c.nombre.toLowerCase().includes(cname.toLowerCase().split(' ')[0]));if(m)convWAPhone=m.whatsapp;}
+  }catch(e){elId('convLoad').style.display='none';toast('Error al analizar: '+e.message,'err');}
+}
+function copyConvMsg(){const m=elId('convMsg').textContent;if(m)navigator.clipboard.writeText(m).then(()=>toast('Copiado 📋','ok'));}
+function openConvWA(){const m=elId('convMsg').textContent;if(!convWAPhone){toast('No encontré teléfono. Copia el mensaje manualmente.','err');return;}window.open('https://wa.me/'+convWAPhone+'?text='+encodeURIComponent(m),'_blank');}
 
-Responde ÚNICAMENTE con un objeto JSON válido, sin markdown, sin texto adicional:
-{"temperatura":"fria|tibia|caliente|muy_caliente","score":5,"resumen":"2-3 oraciones sobre nivel de implicación y actitud del cliente","mood_recomendado":"cobranza|bienvenida|reactivacion|levanta_muertos|upgrade|anualidad|promo_curso|complementario","mood_razon":"1 frase explicando por qué ese mood","mensaje":"mensaje completo listo para enviar, tono espiritual y cálido, firma: *Equipo Luz Arcana ✨*"}`;
-
-  try {
-    const res = await fetch(API_ENDPOINT, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: 'claude-haiku-4-5', max_tokens: 1000, messages: [{ role: 'user', content: prompt }] })
-    });
-    if (!res.ok) throw new Error('Error ' + res.status);
-    const data = await res.json();
-    const raw  = (data.content || []).map(b => b.text || '').join('').trim().replace(/^```json|^```|```$/gm, '').trim();
-    const result = JSON.parse(raw);
-    const tmap = {
-      'fria':        { i:'🧊', l:'Fría',           c:'#4fa3e0' },
-      'tibia':       { i:'🌤️', l:'Tibia',          c:'#e0a84f' },
-      'caliente':    { i:'🔥', l:'Caliente',        c:'var(--green)' },
-      'muy_caliente':{ i:'🚀', l:'¡Muy caliente!',  c:'var(--gold)' },
-    };
-    const t = tmap[result.temperatura] || { i:'🌡️', l: result.temperatura, c:'var(--muted)' };
-    elId('convLoad').style.display = 'none';
-    const tc = elId('tempCard'); tc.style.display = 'block'; tc.style.borderColor = t.c;
-    elId('tempIcon').textContent  = t.i;
-    elId('tempLabel').innerHTML   = `<span style="color:${t.c}">${t.l}</span>`;
-    elId('tempScore').textContent = 'Implicación: ' + result.score + '/10';
-    elId('convSumBox').style.display  = 'block'; elId('convSum').textContent = result.resumen;
-    elId('convMoodBox').style.display = 'block';
-    elId('convMoodSug').textContent   = getMoodLabel(result.mood_recomendado).split('—')[0].trim();
-    elId('convMoodReason').textContent= result.mood_razon;
-    elId('convMsgBox').style.display  = 'block'; elId('convMsg').textContent = result.mensaje;
-    elId('convActions').style.display = 'grid';
-    convWAPhone = '';
-    if (cname) {
-      const m = clients.find(c => c.nombre.toLowerCase().includes(cname.toLowerCase().split(' ')[0]));
-      if (m) convWAPhone = m.whatsapp;
-    }
-  } catch(e) {
-    elId('convLoad').style.display = 'none';
-    toast('Error al analizar: ' + e.message, 'err');
+// ══ LEADS (sin cambios) ═══════════════════════════════════════
+function tiempoTranscurrido(fechaStr){
+  if(!fechaStr||fechaStr.trim()==='') return null;
+  let d;
+  if(fechaStr.includes('T')){d=new Date(fechaStr);}
+  else if(fechaStr.match(/\d{1,2}\/\d{1,2}\/\d{4}\s+\d{1,2}:\d{2}/)){const m=fechaStr.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2})/);if(!m)return null;const iso=m[3]+'-'+String(m[2]).padStart(2,'0')+'-'+String(m[1]).padStart(2,'0')+'T'+String(m[4]).padStart(2,'0')+':'+m[5]+':00-06:00';d=new Date(iso);}
+  else if(fechaStr.match(/\d{1,2}\/\d{1,2}\/\d{4}/)){const m=fechaStr.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);if(!m)return null;const iso=m[3]+'-'+String(m[2]).padStart(2,'0')+'-'+String(m[1]).padStart(2,'0')+'T12:00:00-06:00';d=new Date(iso);}
+  else return null;
+  if(!d||isNaN(d.getTime())) return null;
+  const ahora=new Date(), diffMs=ahora-d;
+  if(diffMs<0) return{texto:'Ahora mismo',urgente:true,horas:0};
+  const mins=Math.floor(diffMs/(1000*60)),horas=Math.floor(diffMs/(1000*60*60)),dias=Math.floor(horas/24);
+  if(mins<60) return{texto:`Hace ${mins} min`,urgente:true,horas:0};
+  if(horas<24) return{texto:`Hace ${horas} hora${horas>1?'s':''}`,urgente:true,horas};
+  if(dias===1) return{texto:'Hace 1 día',urgente:false,horas};
+  return{texto:`Hace ${dias} días`,urgente:false,horas};
+}
+let leads=[],leadsFiltered=[],leadsFiltroActivo='todos';
+const TEMP_CONFIG={'muy_caliente':{icon:'🚀',label:'Muy caliente',color:'#c9a84c'},'caliente':{icon:'🔥',label:'Caliente',color:'#4caf7c'},'tibia':{icon:'🌤️',label:'Tibio',color:'#e0a84f'},'fria':{icon:'🧊',label:'Frío',color:'#4fa3e0'}};
+async function loadLeads(){
+  let url=elId('leadsUrl').value.trim();
+  if(!url){toast('Pega el link de tu hoja Leads','err');return;}
+  if(!url.includes('output=csv')) url+=(url.includes('?')?'&':'?')+'output=csv';
+  toast('Cargando leads…','');
+  try{const r=await fetch(url);if(!r.ok)throw new Error('No se pudo acceder');const text=await r.text();parseLeads(text);}
+  catch(e){toast('Error: '+e.message,'err');}
+}
+function parseLeads(csv){
+  const lines=csv.replace(/^\uFEFF/,'').split('\n').filter(l=>l.trim());
+  if(lines.length<2){toast('La hoja está vacía','err');return;}
+  const sep=lines[0].includes(';')?';':',';
+  const headers=lines[0].split(sep).map(h=>h.replace(/"/g,'').trim().toLowerCase());
+  const g=(row,key)=>{const i=headers.indexOf(key);return i>=0&&i<row.length?row[i].replace(/"/g,'').trim():''};
+  leads=[];
+  for(let i=1;i<lines.length;i++){
+    const row=splitCSV(lines[i],sep);
+    const tel=g(row,'telefono'),nom=g(row,'nombre');
+    if(!tel&&!nom) continue;
+    leads.push({telefono:tel,nombre:nom||'Sin nombre',curso_interes:g(row,'curso_interes'),fecha_contacto:g(row,'fecha_contacto'),fecha_procesado:g(row,'fecha_procesado'),temperatura:g(row,'temperatura')||'fria',objeciones:g(row,'objeciones'),preguntas:g(row,'preguntas'),sugerencia:g(row,'sugerencia_seguimiento'),estatus:g(row,'estatus')||'lead',notas:g(row,'notas'),msg:''});
   }
+  if(!leads.length){toast('No encontré leads','err');return;}
+  leadsFiltered=[...leads];
+  elId('leadsFiltros').style.display='flex';
+  elId('leadsStats').style.display='block';
+  renderLeads();
+  toast(leads.length+' leads cargados ✓','ok');
 }
+function filtrarLeads(filtro){
+  leadsFiltroActivo=filtro;
+  document.querySelectorAll('#leadsFiltros .filter-btn').forEach(b=>b.classList.remove('on'));
+  event.currentTarget.classList.add('on');
+  if(filtro==='todos') leadsFiltered=[...leads];
+  else if(filtro==='lead') leadsFiltered=leads.filter(l=>l.estatus==='lead');
+  else leadsFiltered=leads.filter(l=>l.temperatura===filtro);
+  renderLeads();
+}
+function estatusLeadLabel(e){return{lead:'📍 Lead',contactado:'📞 Contactado',convertido:'✅ Convertido',descartado:'🚫 Desc.'}[e]||e;}
+function renderLeads(){
+  const el=elId('leadsList');el.innerHTML='';
+  const muyC=leads.filter(l=>l.temperatura==='muy_caliente').length,cal=leads.filter(l=>l.temperatura==='caliente').length,tib=leads.filter(l=>l.temperatura==='tibia').length,fri=leads.filter(l=>l.temperatura==='fria').length;
+  elId('leadsStats').textContent=leads.length+' leads · 🚀'+muyC+' 🔥'+cal+' 🌤'+tib+' 🧊'+fri;
+  if(!leadsFiltered.length){el.innerHTML='<div style="text-align:center;color:var(--muted);padding:30px;font-size:12px">No hay leads con ese filtro</div>';return;}
+  leadsFiltered.forEach(l=>{
+    const idx=leads.indexOf(l),tc=TEMP_CONFIG[l.temperatura]||TEMP_CONFIG['fria'],card=document.createElement('div');
+    card.style.cssText='background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:0';
+    card.innerHTML='<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><div class="avatar" style="background:'+aColor(l.nombre)+';width:38px;height:38px;font-size:15px;cursor:default">'+l.nombre.charAt(0).toUpperCase()+'</div><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700">'+l.nombre+'</div><div style="font-size:10px;color:var(--muted)">'+(l.telefono||'Sin tel')+'</div>'+((l.fecha_contacto||l.fecha_procesado)?(function(){var ref=l.fecha_procesado||l.fecha_contacto;var t=tiempoTranscurrido(ref);return'<div style="font-size:10px;font-weight:700;color:'+(t&&t.urgente?'#e07a3d':'var(--muted)')+'">⏱ '+l.fecha_contacto+(t?' · '+t.texto:'')+(t&&t.urgente?' ⚡':'')+'</div>';})():'')+
+    '</div><span style="font-size:10px;padding:3px 8px;border-radius:20px;background:'+tc.color+'22;color:'+tc.color+';font-weight:700;white-space:nowrap">'+tc.icon+' '+tc.label+'</span></div>'+
+    (l.curso_interes?'<div style="font-size:11px;color:var(--vl);margin-bottom:6px">📚 '+l.curso_interes+'</div>':'')+
+    (l.sugerencia?'<div style="font-size:11px;color:var(--muted);line-height:1.5;margin-bottom:8px;padding:6px 8px;background:var(--surface);border-radius:6px">💡 '+l.sugerencia+'</div>':'')+
+    '<div id="leadLoad'+idx+'" class="msg-loading"><div class="spinner"></div>Generando…</div>'+
+    '<div id="leadMsg'+idx+'" class="msg-preview'+(l.msg?' show':'')+'">'+l.msg+'</div>'+
+    '<div style="display:flex;gap:5px;margin-top:8px">'+
+    '<button onclick="genLead('+idx+')" style="flex:1;border:1px solid var(--violet);border-radius:8px;padding:7px 3px;background:var(--surface);color:var(--vl);font-size:9px;font-weight:700;cursor:pointer;font-family:Lato,sans-serif">'+(l.msg?'🔄':'✨')+' '+(l.msg?'Regen':'Generar')+'</button>'+
+    '<button onclick="openWALead('+idx+')" style="flex:1;border:1px solid '+(l.telefono&&l.msg?'#25d366':'var(--border)')+';border-radius:8px;padding:7px 3px;background:var(--surface);color:'+(l.telefono&&l.msg?'#25d366':'var(--muted)')+';font-size:9px;font-weight:700;cursor:pointer;font-family:Lato,sans-serif">💬 WA</button>'+
+    '<button onclick="copyLead('+idx+')" style="flex:1;border:1px solid var(--border);border-radius:8px;padding:7px 3px;background:var(--surface);color:var(--text);font-size:9px;font-weight:700;cursor:pointer;font-family:Lato,sans-serif">📋 Copiar</button>'+
+    '<button onclick="cycleEstatus('+idx+', this)" style="flex:1;border:1px solid var(--border);border-radius:8px;padding:7px 3px;background:var(--surface);color:var(--muted);font-size:9px;font-weight:700;cursor:pointer;font-family:Lato,sans-serif">'+estatusLeadLabel(l.estatus)+'</button>'+
+    '</div>';
+    el.appendChild(card);
+  });
+}
+function cycleEstatus(idx,btn){const orden=['lead','contactado','convertido','descartado'];const l=leads[idx];l.estatus=orden[(orden.indexOf(l.estatus)+1)%orden.length];btn.textContent=estatusLeadLabel(l.estatus);}
+async function genLead(idx){
+  const l=leads[idx],loadEl=elId('leadLoad'+idx),msgEl=elId('leadMsg'+idx);
+  if(loadEl) loadEl.classList.add('show');
+  if(msgEl)  msgEl.classList.remove('show');
+  const prompt='Eres Ricardo Flores, fundador de la Academia Luz Arcana (cursos espirituales: Tarot, Runas, Astrología, Numerología, Herbolaria, Yoga, Mindfulness y más).\n\nEscribe un mensaje de WhatsApp de seguimiento. Improvisa y adapta el ángulo y el cierre según lo que sabes de la conversación.\n\nCONTEXTO:\n- Nombre: '+l.nombre+'\n- Curso: '+(l.curso_interes||'no especificado')+'\n- Temperatura: '+l.temperatura+'\n- Preguntas: '+(l.preguntas||'ninguna')+'\n- Objeciones: '+(l.objeciones||'ninguna')+'\n- Contexto: '+(l.sugerencia||'ninguno')+'\n- Fecha de contacto: '+(l.fecha_contacto||'reciente')+'\n- Tiempo transcurrido: '+(tiempoTranscurrido(l.fecha_contacto)?tiempoTranscurrido(l.fecha_contacto).texto:'desconocido')+(tiempoTranscurrido(l.fecha_contacto)&&tiempoTranscurrido(l.fecha_contacto).horas<24?' (menos de 24 horas — menciona que viste su mensaje recién y que quisiste escribirle pronto)':'')+'\n\nDATOS DE LUZ ARCANA (usa los que encajen natural, no todos):\n- Más de 500 alumnas inscritas\n- Precio de beca activo pero se acaba — hay otras personas que también lo quieren\n- Acceso permanente: no los soltamos hasta que de verdad lo aprendan\n- Se puede pagar con tarjeta\n- Se puede entrar en cualquier momento, a su ritmo\n\nVOZ DE RICARDO: español mexicano, tuteo (tú nunca vos), cercano, directo, jiribilla muy suave, nunca vendedor de humo.\n\nREGLAS:\n- SOLO el cuerpo del mensaje\n- Saluda con primer nombre\n- Cierra con pregunta que asume que sí va a entrar (micro compromiso)\n- Máximo 5 oraciones\n- Máximo 2 emojis\n- Firma: *Ricardo / Luz Arcana* ✨';
+  try{
+    const res=await fetch(API_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-haiku-4-5',max_tokens:400,messages:[{role:'user',content:prompt}]})});
+    if(!res.ok) throw new Error('Error '+res.status);
+    const data=await res.json();
+    l.msg=(data.content||[]).map(b=>b.text||'').join('').trim();
+    if(loadEl) loadEl.classList.remove('show');
+    if(msgEl){msgEl.textContent=l.msg;msgEl.classList.add('show');}
+    renderLeads();
+  }catch(e){if(loadEl)loadEl.classList.remove('show');toast('Error: '+e.message,'err');}
+}
+function openWALead(idx){const l=leads[idx];if(!l.msg){toast('Genera el mensaje primero','err');return;}if(!l.telefono){toast('Sin teléfono','err');return;}window.open('https://wa.me/'+cleanPhone(l.telefono)+'?text='+encodeURIComponent(l.msg),'_blank');l.estatus='contactado';renderLeads();}
+function copyLead(idx){const l=leads[idx];if(!l.msg){toast('Genera el mensaje primero','err');return;}navigator.clipboard.writeText(l.msg).then(()=>toast('Copiado 📋','ok'));}
 
-function copyConvMsg() {
-  const m = elId('convMsg').textContent;
-  if (m) navigator.clipboard.writeText(m).then(() => toast('Copiado 📋', 'ok'));
-}
-function openConvWA() {
-  const m = elId('convMsg').textContent;
-  if (!convWAPhone) { toast('No encontré teléfono. Copia el mensaje manualmente.', 'err'); return; }
-  window.open('https://wa.me/' + convWAPhone + '?text=' + encodeURIComponent(m), '_blank');
-}
+function toast(msg,type=''){const t=elId('toast');t.textContent=msg;t.className='toast show '+type;clearTimeout(t._t);t._t=setTimeout(()=>t.className='toast',2800);}
 </script>
 </body>
 </html>
