@@ -388,6 +388,25 @@ function firstName(n) { return n.trim().split(' ')[0]; }
 function elId(id) { return document.getElementById(id); }
 
 // ══ LEADS ═════════════════════════════════════════════════════
+function tiempoTranscurrido(fechaStr) {
+  if (!fechaStr) return null;
+  // Parse DD/MM/YYYY
+  const parts = fechaStr.split('/');
+  if (parts.length !== 3) return null;
+  const d = new Date(parts[2], parts[1]-1, parts[0]);
+  if (isNaN(d.getTime())) return null;
+  const ahora = new Date();
+  const diffMs = ahora - d;
+  const horas = Math.floor(diffMs / (1000 * 60 * 60));
+  const dias = Math.floor(horas / 24);
+  const horasResto = horas % 24;
+  if (horas < 1) return { texto: 'Hace menos de 1 hora', urgente: true, horas: 0 };
+  if (horas < 24) return { texto: `Hace ${horas} hora${horas>1?'s':''}`, urgente: true, horas };
+  if (dias < 2) return { texto: `Hace ${horas} horas (${dias} día)`, urgente: false, horas };
+  return { texto: `Hace ${dias} días`, urgente: false, horas };
+}
+
+
 let leads = [], leadsFiltered = [], leadsFiltroActivo = 'todos';
 
 const TEMP_CONFIG = {
@@ -460,7 +479,9 @@ function renderLeads() {
       '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">'
       + '<div class="avatar" style="background:'+aColor(l.nombre)+';width:38px;height:38px;font-size:15px;cursor:default">'+l.nombre.charAt(0).toUpperCase()+'</div>'
       + '<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700">'+l.nombre+'</div>'
-      + '<div style="font-size:10px;color:var(--muted)">'+( l.telefono||'Sin tel')+(l.fecha_contacto?' · '+l.fecha_contacto:'')+'</div></div>'
+      + '<div style="font-size:10px;color:var(--muted)">'+( l.telefono||'Sin tel')+'</div>'
+      + (l.fecha_contacto ? (function(){ var t=tiempoTranscurrido(l.fecha_contacto); return '<div style="font-size:10px;font-weight:700;color:'+(t&&t.urgente?'#e07a3d':'var(--muted)')+'">⏱ '+l.fecha_contacto+(t?' · '+t.texto:'')+(t&&t.urgente?' ⚡':'')+'</div>'; })() : '')
+      + '</div>'
       + '<span style="font-size:10px;padding:3px 8px;border-radius:20px;background:'+tc.color+'22;color:'+tc.color+';font-weight:700;white-space:nowrap">'+tc.icon+' '+tc.label+'</span>'
       + '</div>'
       + (l.curso_interes ? '<div style="font-size:11px;color:var(--vl);margin-bottom:6px">📚 '+l.curso_interes+'</div>' : '')
@@ -489,7 +510,7 @@ async function genLead(idx) {
   const loadEl = elId('leadLoad'+idx), msgEl = elId('leadMsg'+idx);
   if (loadEl) loadEl.classList.add('show');
   if (msgEl)  msgEl.classList.remove('show');
-  const prompt = 'Eres Ricardo Flores, fundador de la Academia Luz Arcana (cursos espirituales: Tarot, Runas, Astrología, Numerología, Herbolaria, Yoga, Mindfulness y más).\n\nEscribe un mensaje de WhatsApp de seguimiento para este lead en voz de Ricardo — español mexicano natural, tuteo (tú, no vos), cercano, directo, con jiribilla muy suave, máximo 2 emojis.\n\nLEAD:\n- Nombre: '+l.nombre+'\n- Curso que preguntó: '+(l.curso_interes||'no especificado')+'\n- Temperatura: '+l.temperatura+'\n- Preguntas que hizo: '+(l.preguntas||'ninguna')+'\n- Objeciones: '+(l.objeciones||'ninguna')+'\n- Contexto de seguimiento: '+(l.sugerencia||'ninguno')+'\n- Fecha de contacto: '+(l.fecha_contacto||'reciente')+'\n\nREGLAS:\n- SOLO el cuerpo del mensaje, sin comillas ni explicaciones\n- Saluda con su primer nombre\n- Menciona el curso que le interesó de forma natural\n- Máximo 4 oraciones\n- Máximo 2 emojis\n- Firma: *Ricardo / Luz Arcana*';
+  const prompt = 'Eres Ricardo Flores, fundador de la Academia Luz Arcana (cursos espirituales: Tarot, Runas, Astrología, Numerología, Herbolaria, Yoga, Mindfulness y más).\n\nEscribe un mensaje de WhatsApp de seguimiento. Improvisa y adapta el ángulo y el cierre según lo que sabes de la conversación.\n\nCONTEXTO:\n- Nombre: '+l.nombre+'\n- Curso: '+(l.curso_interes||'no especificado')+'\n- Temperatura: '+l.temperatura+'\n- Preguntas: '+(l.preguntas||'ninguna')+'\n- Objeciones: '+(l.objeciones||'ninguna')+'\n- Contexto: '+(l.sugerencia||'ninguno')+'\n- Fecha de contacto: '+(l.fecha_contacto||'reciente')+'\n- Tiempo transcurrido: '+(tiempoTranscurrido(l.fecha_contacto)?tiempoTranscurrido(l.fecha_contacto).texto:'desconocido')+' (si es menos de 24 horas menciona que viste su mensaje recién y que quisiste escribirle pronto)'+'\n\nDATOS DE LUZ ARCANA (usa los que encajen natural, no todos):\n- Más de 500 alumnas inscritas\n- Precio de beca activo pero se acaba — hay otras personas que también lo quieren\n- Acceso permanente: no los soltamos hasta que de verdad lo aprendan\n- Se puede pagar con tarjeta\n- Se puede entrar en cualquier momento, a su ritmo\n\nVOZ DE RICARDO: español mexicano, tuteo (tú nunca vos), cercano, directo, jiribilla muy suave, nunca vendedor de humo.\n\nREGLAS:\n- SOLO el cuerpo del mensaje\n- Saluda con primer nombre\n- Cierra con pregunta que asume que sí va a entrar (micro compromiso)\n- Máximo 5 oraciones\n- Máximo 2 emojis\n- Firma: *Ricardo / Luz Arcana* ✨';
   try {
     const res = await fetch(API_ENDPOINT, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ model:'claude-haiku-4-5', max_tokens:400, messages:[{role:'user',content:prompt}] }) });
     if (!res.ok) throw new Error('Error '+res.status);
