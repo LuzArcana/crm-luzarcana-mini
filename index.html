@@ -389,26 +389,35 @@ function elId(id) { return document.getElementById(id); }
 
 // ══ LEADS ═════════════════════════════════════════════════════
 function tiempoTranscurrido(fechaStr) {
-  if (!fechaStr) return null;
+  if (!fechaStr || fechaStr.trim() === '') return null;
   let d;
-  // Si viene como ISO (2026-05-17T00:56:01.311Z) parsear directo
-  if (fechaStr.includes('T') || fechaStr.includes('-')) {
+  if (fechaStr.includes('T')) {
+    // ISO format: 2026-05-17T00:56:01Z — Make timestamp (UTC)
     d = new Date(fechaStr);
+  } else if (fechaStr.match(/\d{1,2}\/\d{1,2}\/\d{4}\s+\d{1,2}:\d{2}/)) {
+    // DD/MM/YYYY HH:MM — extraído del .txt de WhatsApp (hora México)
+    const m = fechaStr.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2})/);
+    if (!m) return null;
+    // Crear fecha en hora local (México UTC-6) — JS Date sin Z asume local
+    d = new Date(parseInt(m[3]), parseInt(m[2])-1, parseInt(m[1]), parseInt(m[4]), parseInt(m[5]), 0);
+  } else if (fechaStr.match(/\d{1,2}\/\d{1,2}\/\d{4}/)) {
+    // DD/MM/YYYY sin hora — asumir mediodia
+    const m = fechaStr.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+    if (!m) return null;
+    d = new Date(parseInt(m[3]), parseInt(m[2])-1, parseInt(m[1]), 12, 0, 0);
   } else {
-    // Parse DD/MM/YYYY — asumir mediodia hora local para no perder el día
-    const parts = fechaStr.split('/');
-    if (parts.length !== 3) return null;
-    d = new Date(parseInt(parts[2]), parseInt(parts[1])-1, parseInt(parts[0]), 12, 0, 0);
+    return null;
   }
-  if (isNaN(d.getTime())) return null;
+  if (!d || isNaN(d.getTime())) return null;
   const ahora = new Date();
   const diffMs = ahora - d;
+  if (diffMs < 0) return { texto: 'Ahora mismo', urgente: true, horas: 0 };
+  const mins  = Math.floor(diffMs / (1000 * 60));
   const horas = Math.floor(diffMs / (1000 * 60 * 60));
-  const mins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-  const dias = Math.floor(horas / 24);
-  if (horas < 1) return { texto: `Hace ${mins} min`, urgente: true, horas: 0 };
+  const dias  = Math.floor(horas / 24);
+  if (mins < 60)  return { texto: `Hace ${mins} min`, urgente: true, horas: 0 };
   if (horas < 24) return { texto: `Hace ${horas} hora${horas>1?'s':''}`, urgente: true, horas };
-  if (dias === 1) return { texto: `Hace 1 día`, urgente: false, horas };
+  if (dias === 1) return { texto: 'Hace 1 día', urgente: false, horas };
   return { texto: `Hace ${dias} días`, urgente: false, horas };
 }
 
