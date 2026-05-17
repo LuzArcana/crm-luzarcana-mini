@@ -1127,14 +1127,14 @@ function applyFilters() {
   countEl.classList.toggle('on', activeCount > 0);
 
   filtered = clients.filter(c => {
-    // Búsqueda: nombre O teléfono (últimos N dígitos, desde 4)
+    // Búsqueda: nombre, teléfono (últimos N dígitos) o correo
     if (q) {
       const qDigits = q.replace(/\D/g,'');
       const waDigits = (c.whatsapp||'').replace(/\D/g,'');
       const nameMatch = c.nombre.toLowerCase().includes(q);
-      // Si escriben solo dígitos (4 o más), buscar como terminación del teléfono
       const phoneMatch = qDigits.length >= 4 && waDigits.endsWith(qDigits);
-      if (!nameMatch && !phoneMatch) return false;
+      const emailMatch = (c.correo||'').toLowerCase().includes(q);
+      if (!nameMatch && !phoneMatch && !emailMatch) return false;
     }
 
     // Día de cobro
