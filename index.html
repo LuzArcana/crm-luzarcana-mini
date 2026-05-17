@@ -560,6 +560,9 @@ const API_ENDPOINT = '/api/claude';
 const MAKE_REVOCACION_WEBHOOK = 'https://hook.us1.make.com/jladjdpw6x7qtxhm37omkyt3o783kejg';
 const ACTIVOS_CSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSbCds0DzdoMik_qLYOd3ppgCE04DCAIfvQjtlivHO-IQm_lbbG7Oxnxga3uByHaqP3s9ejxBE05G6_/pub?gid=0&single=true&output=csv';
 const DATOS_PAGO = '\n\n💳 *Ricardo Flores Valdés*\n4152 3145 7013 9538 *Tarjeta de Débito BBVA*\n012650004907020488 *Clabe*\n0490702048 *Cuenta*';
+const LEADS_SHEET_ID = '10_Y95d4vsyqtTKhoP4V4Y9-VCGjym6vOTZNRBUHr2Fs';
+const LEADS_COL_M = 12; // etapa_seguimiento (col M, 0-based)
+const LEADS_COL_N = 13; // num_contactos (col N, 0-based)
 
 const LADAS = {"55":"CDMX","56":"CDMX","33":"Jalisco","36":"Jalisco","81":"Nuevo León","222":"Puebla","221":"Puebla","224":"Puebla","477":"Guanajuato","461":"Guanajuato","462":"Guanajuato","464":"Guanajuato","473":"Guanajuato","476":"Guanajuato","442":"Querétaro","441":"Querétaro","419":"Querétaro","771":"Hidalgo","775":"Hidalgo","774":"Hidalgo","722":"Edomex","728":"Edomex","712":"Edomex","717":"Edomex","718":"Edomex","721":"Edomex","724":"Edomex","777":"Morelos","735":"Morelos","744":"Guerrero","747":"Guerrero","951":"Oaxaca","954":"Oaxaca","958":"Oaxaca","961":"Chiapas","962":"Chiapas","963":"Chiapas","964":"Chiapas","966":"Chiapas","967":"Chiapas","968":"Chiapas","999":"Yucatán","997":"Yucatán","988":"Yucatán","998":"Q. Roo","983":"Q. Roo","984":"Q. Roo","993":"Tabasco","994":"Tabasco","921":"Veracruz","229":"Veracruz","228":"Veracruz","272":"Veracruz","278":"Veracruz","282":"Veracruz","296":"Veracruz","614":"Chihuahua","656":"Chihuahua","625":"Chihuahua","639":"Chihuahua","662":"Sonora","644":"Sonora","643":"Sonora","642":"Sonora","641":"Sonora","686":"BC","664":"BC","665":"BC","646":"BC","612":"BCS","624":"BCS","618":"Durango","674":"Durango","871":"Coahuila","844":"Coahuila","861":"Coahuila","878":"Coahuila","834":"Tamaulipas","868":"Tamaulipas","833":"Tamaulipas","899":"Tamaulipas","867":"Tamaulipas","813":"Tamaulipas","312":"Colima","314":"Colima","341":"Jalisco","375":"Jalisco","351":"Jalisco","331":"Jalisco","378":"Jalisco","321":"Nayarit","311":"Nayarit","492":"Zacatecas","493":"Zacatecas","444":"SLP","481":"SLP","482":"SLP","449":"Aguascalientes","465":"Aguascalientes","434":"Michoacán","443":"Michoacán","452":"Michoacán","353":"Michoacán","913":"Campeche","981":"Campeche","922":"Veracruz","271":"Veracruz","238":"Puebla","243":"Puebla","275":"Puebla","276":"Tlaxcala","246":"Tlaxcala","241":"Tlaxcala","741":"Guerrero","756":"Guerrero","732":"Guerrero","753":"Michoacán","713":"Guerrero","767":"Morelos","787":"Guerrero"};
 
@@ -2024,7 +2027,7 @@ function parseLeads(csv){
     const row=splitCSV(lines[i],sep);
     const tel=g(row,'telefono'),nom=g(row,'nombre');
     if(!tel&&!nom) continue;
-    leads.push({telefono:tel,nombre:nom||'Sin nombre',curso_interes:g(row,'curso_interes'),fecha_contacto:g(row,'fecha_contacto'),fecha_procesado:g(row,'fecha_procesado'),temperatura:g(row,'temperatura')||'fria',objeciones:g(row,'objeciones'),preguntas:g(row,'preguntas'),sugerencia:g(row,'sugerencia_seguimiento'),estatus:g(row,'estatus')||'lead',notas:g(row,'notas'),msg:''});
+    leads.push({telefono:tel,nombre:nom||'Sin nombre',curso_interes:g(row,'curso_interes'),fecha_contacto:g(row,'fecha_contacto'),fecha_procesado:g(row,'fecha_procesado'),temperatura:g(row,'temperatura')||'fria',objeciones:g(row,'objeciones'),preguntas:g(row,'preguntas'),sugerencia:g(row,'sugerencia_seguimiento'),estatus:g(row,'estatus')||'lead',notas:g(row,'notas'),etapa:g(row,'etapa_seguimiento')||'lead_nuevo',contactos:parseInt(g(row,'num_contactos')||'0')||0,_rowIndex:i-1,msg:''});
   }
   if(!leads.length){toast('No encontré leads','err');return;}
   leadsFiltered=[...leads];
@@ -2054,6 +2057,7 @@ function renderLeads(){
     card.innerHTML='<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><div class="avatar" style="background:'+aColor(l.nombre)+';width:38px;height:38px;font-size:15px;cursor:default">'+l.nombre.charAt(0).toUpperCase()+'</div><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700">'+l.nombre+'</div><div style="font-size:10px;color:var(--muted)">'+(l.telefono||'Sin tel')+'</div>'+((l.fecha_contacto||l.fecha_procesado)?(function(){var ref=l.fecha_procesado||l.fecha_contacto;var t=tiempoTranscurrido(ref);return'<div style="font-size:10px;font-weight:700;color:'+(t&&t.urgente?'#e07a3d':'var(--muted)')+'">⏱ '+l.fecha_contacto+(t?' · '+t.texto:'')+(t&&t.urgente?' ⚡':'')+'</div>';})():'')+
     '</div><span style="font-size:10px;padding:3px 8px;border-radius:20px;background:'+tc.color+'22;color:'+tc.color+';font-weight:700;white-space:nowrap">'+tc.icon+' '+tc.label+'</span></div>'+
     (l.curso_interes?'<div style="font-size:11px;color:var(--vl);margin-bottom:6px">📚 '+l.curso_interes+'</div>':'')+
+    (function(){const et=l.etapa||'lead_nuevo';const ct=l.contactos||0;const MAP={'lead_nuevo':['var(--muted)','📍','Nuevo'],'en_seguimiento':['#e0a84f','📨','Seguimiento '+ct+'x'],'cierre_elegante':['var(--red)','🔚','Último intento'],'pendiente_comprobante':['var(--gold)','💳','Espera comprobante'],'pendiente_registro':['var(--vl)','📝','Espera registro'],'convertido':['var(--green)','✅','Convertido'],'descartado':['var(--muted)','🚫','Descartado']};const c=MAP[et]||MAP['lead_nuevo'];return '<div style="display:inline-flex;align-items:center;gap:4px;font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;border:1px solid '+c[0]+'44;color:'+c[0]+';margin-bottom:6px">'+c[1]+' '+c[2]+'</div>';})()+'
     (l.sugerencia?'<div style="font-size:11px;color:var(--muted);line-height:1.5;margin-bottom:8px;padding:6px 8px;background:var(--surface);border-radius:6px">💡 '+l.sugerencia+'</div>':'')+
     '<div id="leadLoad'+idx+'" class="msg-loading"><div class="spinner"></div>Generando…</div>'+
     '<div id="leadMsg'+idx+'" class="msg-preview'+(l.msg?' show':'')+'">'+l.msg+'</div>'+
@@ -2066,20 +2070,40 @@ function renderLeads(){
     el.appendChild(card);
   });
 }
-function cycleEstatus(idx,btn){const orden=['lead','contactado','convertido','descartado'];const l=leads[idx];l.estatus=orden[(orden.indexOf(l.estatus)+1)%orden.length];btn.textContent=estatusLeadLabel(l.estatus);}
+async function cycleEstatus(idx,btn){
+  const orden=['lead','contactado','convertido','descartado'];
+  const l=leads[idx];
+  l.estatus=orden[(orden.indexOf(l.estatus)+1)%orden.length];
+  // Sincronizar etapa con estatus manual
+  if(l.estatus==='convertido') l.etapa='convertido';
+  if(l.estatus==='descartado') l.etapa='descartado';
+  btn.textContent=estatusLeadLabel(l.estatus);
+  // Guardar en Sheet
+  if(googleConnected){
+    const sheetRow=l._rowIndex+2;
+    try{
+      await fetch('/api/sheets',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({action:'writeBatch',payload:{
+          sheetId:LEADS_SHEET_ID,
+          updates:[
+            {range:'Leads!'+colToLetter(LEADS_COL_M)+sheetRow, value:l.etapa||l.estatus},
+            {range:'Leads!'+colToLetter(LEADS_COL_N)+sheetRow, value:String(l.contactos||0)},
+          ]
+        }})
+      });
+    }catch(e){/* silencioso */}
+  }
+}
 async function genLead(idx){
   const l=leads[idx],loadEl=elId('leadLoad'+idx),msgEl=elId('leadMsg'+idx);
   if(loadEl) loadEl.classList.add('show');
   if(msgEl)  msgEl.classList.remove('show');
 
-  // Nivel de seguimiento según estatus
-  const nivelSeg=(()=>{
-    const e=(l.estatus||'').toLowerCase();
-    if(e==='contactado') return 2;
-    if(e==='convertido') return 3;
-    if(e==='descartado') return 4;
-    return 1;
-  })();
+  // Nivel de seguimiento — usa contactos reales del Sheet
+  const contactos=l.contactos||0;
+  const etapa=l.etapa||'lead_nuevo';
+  const esCierreElegante=etapa==='cierre_elegante'||contactos>=3;
+  const nivelSeg=contactos===0?1:contactos===1?2:contactos===2?3:4;
 
   // Tiempo transcurrido
   const tiempoRef=l.fecha_procesado||l.fecha_contacto;
@@ -2094,13 +2118,15 @@ CURSO: Tarot — $620 pago único (beca promocional, puede terminar). Incluye: 3
 LEAD:
 - Nombre: ${l.nombre||'no dado'}
 - Temperatura: ${l.temperatura||'fria'}
-- Etapa/Estatus: ${l.estatus||'lead'}
+- Etapa CRM: ${etapa} (${contactos} contacto${contactos!==1?'s':''})
+- Estatus: ${l.estatus||'lead'}
+- ¿Cierre elegante?: ${esCierreElegante?'SÍ — último intento, tono de cierre elegante sin presión':'NO'}
 - Curso interés: ${l.curso_interes||'Tarot'}
 - Objeción detectada: ${l.objeciones||'ninguna'}
 - Preguntas previas: ${l.preguntas||'ninguna'}
 - Contexto adicional: ${l.sugerencia||'ninguno'}
 - Tiempo desde contacto: ${tiempoTxt}${esUrgente?' ⚡ menos de 24h — menciona que viste su mensaje recién':''}
-- Nivel de seguimiento: ${nivelSeg} (${nivelSeg===1?'primer mensaje':'ya hubo contacto previo — genera mensaje DIFERENTE y más avanzado, no repetir lo mismo'})
+- Nivel de seguimiento: ${nivelSeg} / contactos enviados: ${contactos}
 
 FLUJO CORRECTO — detecta el paso actual y apunta al siguiente:
 informa → resuelve dudas → cierra → datos de pago → espera comprobante → liga de registro → espera registro → bienvenida
@@ -2133,7 +2159,39 @@ Devuelve SOLO el cuerpo del mensaje, sin comillas ni explicaciones.`;
     renderLeads();
   }catch(e){if(loadEl)loadEl.classList.remove('show');toast('Error: '+e.message,'err');}
 }
-function openWALead(idx){const l=leads[idx];if(!l.msg){toast('Genera el mensaje primero','err');return;}if(!l.telefono){toast('Sin teléfono','err');return;}window.open('https://wa.me/'+cleanPhone(l.telefono)+'?text='+encodeURIComponent(l.msg),'_blank');l.estatus='contactado';renderLeads();}
+async function openWALead(idx){
+  const l=leads[idx];
+  if(!l.msg){toast('Genera el mensaje primero','err');return;}
+  if(!l.telefono){toast('Sin teléfono','err');return;}
+  window.open('https://wa.me/'+cleanPhone(l.telefono)+'?text='+encodeURIComponent(l.msg),'_blank');
+  // Actualizar estatus, contactos y etapa en memoria
+  l.estatus='contactado';
+  l.contactos=(l.contactos||0)+1;
+  // Determinar etapa según contactos
+  const etapaAnterior=l.etapa||'lead_nuevo';
+  const esEtapaFlujo=['pendiente_comprobante','pendiente_registro','convertido'].includes(etapaAnterior);
+  if(!esEtapaFlujo){
+    if(l.contactos>=3) l.etapa='cierre_elegante';
+    else l.etapa='en_seguimiento';
+  }
+  renderLeads();
+  // Guardar en Sheet si hay Google conectado
+  if(googleConnected){
+    const sheetRow=l._rowIndex+2; // fila 1=headers, datos desde fila 2
+    try{
+      await fetch('/api/sheets',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({action:'writeBatch',payload:{
+          sheetId:LEADS_SHEET_ID,
+          updates:[
+            {range:'Leads!'+colToLetter(LEADS_COL_M)+sheetRow, value:l.etapa},
+            {range:'Leads!'+colToLetter(LEADS_COL_N)+sheetRow, value:String(l.contactos)},
+          ]
+        }})
+      });
+      toast('✓ Etapa guardada en Leads','ok');
+    }catch(e){toast('Lead abierto (sin guardar etapa: '+e.message+')','err');}
+  }
+}
 function copyLead(idx){const l=leads[idx];if(!l.msg){toast('Genera el mensaje primero','err');return;}navigator.clipboard.writeText(l.msg).then(()=>toast('Copiado 📋','ok'));}
 
 function toast(msg,type=''){const t=elId('toast');t.textContent=msg;t.className='toast show '+type;clearTimeout(t._t);t._t=setTimeout(()=>t.className='toast',2800);}
