@@ -1111,7 +1111,14 @@ function applyFilters() {
 
   filtered = clients.filter(c => {
     // Texto
-    if (q && !c.nombre.toLowerCase().includes(q) && !(c.whatsapp||'').includes(q)) return false;
+    // Búsqueda: nombre O últimos 10 dígitos del teléfono
+    if (q) {
+      const qDigits = q.replace(/\D/g,'').slice(-10);
+      const waDigits = (c.whatsapp||'').replace(/\D/g,'').slice(-10);
+      const nameMatch = c.nombre.toLowerCase().includes(q);
+      const phoneMatch = qDigits.length >= 7 && waDigits.includes(qDigits);
+      if (!nameMatch && !phoneMatch) return false;
+    }
 
     // Día de cobro (multiselect)
     if (chipState.dia.size > 0 && !chipState.dia.has((c.dias_cobro||'').trim())) return false;
@@ -1180,6 +1187,66 @@ function togglePending() {
 }
 
 // ══ GENERAR MENSAJE ══
+// ── Calcula meses debidos y deuda total para un alumno ──
+function calcularDeuda(idx) {
+  const c = clients[idx];
+  const rawRow = rawRows[c._rowIndex] || [];
+  const now = new Date();
+  const mesActual = now.getMonth() + 1;
+  const yearActual = now.getFullYear();
+
+  // Precio mensual del alumno
+  const precioStr = precioDeEstatus(c.estatus);
+  const precioMes = precioStr ? parseInt(precioStr.replace(/[^\d]/g,'')) : 0;
+
+  // Encontrar el último mes con algo anotado (pagado, monto, beca, etc.)
+  let ultimoMesOk = null; // {year, month}
+  for (let y = MESES_BASE_YEAR; y <= yearActual; y++) {
+    for (let m = 1; m <= 12; m++) {
+      if (y === MESES_BASE_YEAR && m < MESES_BASE_MONTH) continue;
+      if (y === yearActual && m > mesActual) break;
+      const colIdx = mesColIndex(y, m);
+      const rawVal = rawRow[colIdx];
+      const val = (rawVal === undefined || rawVal === null) ? '' : String(rawVal).replace(/^"|"$/g,'').trim();
+      if (val && val !== '') {
+        ultimoMesOk = {year: y, month: m, val};
+      }
+    }
+  }
+
+  // Meses vacíos desde el mes siguiente al último pago hasta hoy
+  const mesesDebidos = [];
+  if (ultimoMesOk) {
+    let y = ultimoMesOk.year, m = ultimoMesOk.month + 1;
+    if (m > 12) { m = 1; y++; }
+    while (y < yearActual || (y === yearActual && m <= mesActual)) {
+      const colIdx = mesColIndex(y, m);
+      const rawVal = rawRow[colIdx];
+      const val = (rawVal === undefined || rawVal === null) ? '' : String(rawVal).replace(/^"|"$/g,'').trim();
+      if (!val || val === '') {
+        mesesDebidos.push({year: y, month: m, nombre: MESES_NOMBRES[m-1] + ' ' + y});
+      }
+      m++;
+      if (m > 12) { m = 1; y++; }
+    }
+  }
+
+  const totalDeuda = precioMes * mesesDebidos.length;
+  const mesesAnteriores = mesesDebidos.filter(md =>
+    md.year < yearActual || (md.year === yearActual && md.month < mesActual)
+  );
+  const debeAtrasados = mesesAnteriores.length > 0;
+
+  return {
+    precioMes,
+    mesesDebidos,
+    totalDeuda,
+    debeAtrasados,
+    ultimoMesOk,
+    mesesAnteriores,
+  };
+}
+
 async function genForClient(idx) {
   if (!selectedMood) { toast('Elige un mood primero ↑','err'); openPanel(); return; }
   const c = clients[idx];
@@ -1207,17 +1274,50 @@ async function genForClient(idx) {
     if(info)   extra_context+=`\nDetalles: ${info}`;
   }
   const isCobranzaMsg = cobTipo || selectedMood==='cobranza';
-  const prompt=`Eres Ricardo Flores, fundador de la Academia Luz Arcana. Escribe un mensaje de WhatsApp en tu voz personal para este alumno.
+
+  // Calcular deuda si es mensaje de cobranza
+  let deudaCtx = '';
+  if (isCobranzaMsg) {
+    const deuda = calcularDeuda(idx);
+    const precio = deuda.precioMes;
+    const meses = deuda.mesesDebidos;
+    const total = deuda.totalDeuda;
+    const precioPermamente = precio ? Math.round(precio * 10 * 0.9) : 0;
+
+    if (meses.length > 0) {
+      const listaMeses = meses.map(m => m.nombre).join(', ');
+      deudaCtx += `\nMESES PENDIENTES: ${listaMeses}`;
+      if (total > 0) deudaCtx += `\nTOTAL ADEUDADO: $${total} MXN (${meses.length} mes${meses.length>1?'es':''} × $${precio})`;
+    } else {
+      deudaCtx += `\nMESES PENDIENTES: solo el mes actual`;
+      if (precio) deudaCtx += `\nMONTO: $${precio} MXN`;
+    }
+
+    if (precio && precioPermamente) {
+      deudaCtx += `\nOFERTA PERMANENTE: $${precioPermamente} MXN pago único (${precio}×10 - 10%) = nunca más mensualidades`;
+    }
+
+    if (deuda.debeAtrasados) {
+      deudaCtx += `\nATRASO: lleva más de 1 mes sin pagar — pregunta directamente si va a continuar o si prefiere:`;
+      deudaCtx += `\n  a) Congelar su cuenta temporalmente`;
+      deudaCtx += `\n  b) Migrar a acceso permanente para solucionar el problema de raíz`;
+      deudaCtx += `\n  c) Darse de baja (revocar)`;
+    }
+
+    deudaCtx += `\nDATA DE PAGO (incluir siempre al final del mensaje, tal cual):\nRicardo Flores Valdés\n4152 3145 7013 9538 Tarjeta de Débito BBVA\n012650004907020488 Clabe\n0490702048 Cuenta`;
+  }
+
+  const prompt = `Eres Ricardo Flores, fundador de la Academia Luz Arcana. Escribe un mensaje de WhatsApp en tu voz personal.
 
 VOZ DE RICARDO:
 - Español mexicano natural. Usa "tú" nunca "vos".
-- Tuteo mexicano: "¿cómo estás?", "te cuento", "mira", "oye", "sale", "ándale".
-- Jiribilla muy suave — un toque de calidez sin exagerar.
+- Tuteo: "¿cómo estás?", "te cuento", "mira", "oye", "sale", "ándale".
+- Jiribilla muy suave — calidez sin exagerar.
 - Emojis: 2 o 3 máximo.
-- Cálido pero no cursi. Directo pero no frío. Espiritual pero aterrizado.
+- Cálido pero directo. Espiritual pero aterrizado.
 - NUNCA suenes corporativo ni vendedor de humo.
 
-ALUMNO:
+ALUMNA:
 - Nombre: ${firstName(c.nombre)}
 - Estatus: ${c.estatus}
 - Membresía: ${c.membresia||'no especificada'}
@@ -1226,22 +1326,30 @@ ALUMNO:
 
 INTENCIÓN: ${ml}
 ${extra_context}
+${deudaCtx}
 
-REGLAS:
+REGLAS GENERALES:
 - SOLO el cuerpo del mensaje, sin comillas ni explicaciones
-- Saluda solo con el primer nombre
-- Máximo 4-5 oraciones
-- NO incluyas datos de pago (van aparte)
+- Saluda con el primer nombre únicamente
 - Variante #${v}
-${isCobranzaMsg?`- Incluye el precio específico\n- NUNCA digas que el pago da acceso a "todos los cursos"\n- Directo sobre el cobro, con calidez`:''}
-- Firma al final: *Ricardo / Luz Arcana*`;
+- Firma al final: *Ricardo / Luz Arcana*
+${isCobranzaMsg ? `
+REGLAS DE COBRANZA:
+- Menciona los meses que se deben y el total, de forma clara pero sin regañar
+- Da oportunidad de que manden comprobante si ya pagaron y no lo anotamos
+- Invita a migrar al permanente con el precio exacto mencionado
+- Si debe meses atrasados: pregunta directamente si continúa, congela o se da de baja
+- Incluye los datos de pago AL FINAL tal como aparecen en DATOS DE PAGO
+- NUNCA digas que el pago da acceso a "todos los cursos"
+- Máximo 6-7 oraciones` : '- Máximo 4-5 oraciones'}`;
 
   try {
     const res = await fetch(API_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-haiku-4-5',max_tokens:500,messages:[{role:'user',content:prompt}]})});
     if(!res.ok){const err=await res.json().catch(()=>({}));throw new Error(err.error?.message||'Error '+res.status);}
     const data=await res.json();
     let msg=(data.content||[]).map(b=>b.text||'').join('').trim();
-    if(opts.pago) msg+=DATOS_PAGO;
+    // Solo agregar datos de pago si NO es cobranza (en cobranza ya van en el prompt)
+    if(opts.pago && !isCobranzaMsg) msg+=DATOS_PAGO;
     c.msg=msg;
     if(loadEl) loadEl.classList.remove('show');
     if(msgEl){msgEl.textContent=msg;msgEl.classList.add('show');}
