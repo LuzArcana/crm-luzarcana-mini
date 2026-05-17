@@ -315,7 +315,7 @@ input[type=text]::placeholder{color:var(--muted)}
 
   <!-- BARRA SUPERIOR -->
   <div style="padding:10px 14px;border-bottom:1px solid var(--border);background:var(--surface);flex-shrink:0;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-    <input type="text" id="leadsUrl" placeholder="Link CSV de Sheets (hoja Leads)…" style="flex:1;min-width:0;font-size:12px;padding:7px 10px">
+    <input type="text" id="leadsUrl" placeholder="Link CSV de Sheets (hoja Leads)…" value="https://docs.google.com/spreadsheets/d/e/2PACX-1vSmhjMwQmCN4Yj78kFg1hM25DMh7L94JjcP5x_OSThpfUL8kZD99_mfE_ilU-ExeoJzBbci6Uj2hWZK/pub?gid=0&single=true&output=csv" style="flex:1;min-width:0;font-size:12px;padding:7px 10px">
     <button onclick="loadLeads()" class="btn" style="width:auto;padding:8px 14px;margin:0;font-size:12px;white-space:nowrap">⚡ Cargar</button>
   </div>
 
@@ -580,6 +580,8 @@ function showNav(name) {
     if (s === name) p.style.flexDirection = 'column';
     elId('nav-' + s).classList.toggle('on', s === name);
   });
+  // Auto-load leads when tab opens
+  if (name === 'leads' && !leads.length) loadLeads();
 }
 
 // ══ PANEL MOOD ════════════════════════════════════════════════
