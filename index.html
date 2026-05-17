@@ -557,6 +557,7 @@ input[type=text]::placeholder{color:var(--muted)}
 <script>
 // ══ CONFIGURACIÓN ══
 const API_ENDPOINT = '/api/claude';
+const MAKE_REVOCACION_WEBHOOK = 'https://hook.us1.make.com/jladjdpw6x7qtxhm37omkyt3o783kejg';
 const ACTIVOS_CSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSbCds0DzdoMik_qLYOd3ppgCE04DCAIfvQjtlivHO-IQm_lbbG7Oxnxga3uByHaqP3s9ejxBE05G6_/pub?gid=0&single=true&output=csv';
 const DATOS_PAGO = '\n\n💳 *Ricardo Flores Valdés*\n4152 3145 7013 9538 *Tarjeta de Débito BBVA*\n012650004907020488 *Clabe*\n0490702048 *Cuenta*';
 
@@ -1604,6 +1605,10 @@ async function saveEditField(idx, key, colIdx, newVal) {
     if (rawRows[c._rowIndex]) rawRows[c._rowIndex][colIdx] = newVal;
     if (dot) dot.classList.remove('show');
     toast('✓ Guardado', 'ok');
+    // Si cambió a revocado → disparar webhook a Make
+    if (key === 'estatus' && newVal.toLowerCase().includes('revocado')) {
+      triggerRevocacion(c);
+    }
     // Refrescar chips de filtros y lista
     populateFiltros();
     renderList();
@@ -1793,6 +1798,26 @@ async function saveMesValue() {
 function cancelMesEdit() {
   elId('mesEditor').classList.remove('show');
   mesEditandoCol = -1;
+}
+
+async function triggerRevocacion(c) {
+  try {
+    await fetch(MAKE_REVOCACION_WEBHOOK, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        nombre: c.nombre,
+        correo: c.correo,
+        whatsapp: c.whatsapp,
+        estatus: c.estatus,
+        membresia: c.membresia,
+        fecha: new Date().toISOString(),
+      })
+    });
+    toast('✓ Revocación enviada a Make', 'ok');
+  } catch(e) {
+    toast('⚠ No se pudo notificar a Make: ' + e.message, 'err');
+  }
 }
 
 function closeFicha(){
