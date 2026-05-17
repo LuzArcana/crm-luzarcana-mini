@@ -143,6 +143,7 @@ input[type=text]::placeholder{color:var(--muted)}
   <button class="nav-tab on" onclick="showNav('mensajes')" id="nav-mensajes">💬 MENSAJES</button>
   <button class="nav-tab" onclick="showNav('aviso')" id="nav-aviso">📢 AVISO</button>
   <button class="nav-tab" onclick="showNav('conv')" id="nav-conv">🔍 ANÁLISIS</button>
+  <button class="nav-tab" onclick="showNav('leads')" id="nav-leads">🎯 LEADS</button>
 </div>
 
 <!-- ══════════════ MENSAJES ══════════════ -->
@@ -309,6 +310,37 @@ input[type=text]::placeholder{color:var(--muted)}
 </div>
 </div>
 
+<!-- ══════════════ LEADS ══════════════ -->
+<div id="page-leads" style="display:none;flex:1;flex-direction:column;overflow:hidden;min-height:0">
+
+  <!-- BARRA SUPERIOR -->
+  <div style="padding:10px 14px;border-bottom:1px solid var(--border);background:var(--surface);flex-shrink:0;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+    <input type="text" id="leadsUrl" placeholder="Link CSV de Sheets (hoja Leads)…" style="flex:1;min-width:0;font-size:12px;padding:7px 10px">
+    <button onclick="loadLeads()" class="btn" style="width:auto;padding:8px 14px;margin:0;font-size:12px;white-space:nowrap">⚡ Cargar</button>
+  </div>
+
+  <!-- FILTROS -->
+  <div style="padding:8px 14px;border-bottom:1px solid var(--border);display:flex;gap:6px;flex-wrap:wrap;flex-shrink:0" id="leadsFiltros" style="display:none">
+    <button class="filter-btn on" onclick="filtrarLeads('todos')">Todos</button>
+    <button class="filter-btn" onclick="filtrarLeads('muy_caliente')" style="border-color:#c9a84c;color:#c9a84c">🚀 Muy calientes</button>
+    <button class="filter-btn" onclick="filtrarLeads('caliente')" style="border-color:#4caf7c;color:#4caf7c">🔥 Calientes</button>
+    <button class="filter-btn" onclick="filtrarLeads('tibia')" style="border-color:#e0a84f;color:#e0a84f">🌤 Tibios</button>
+    <button class="filter-btn" onclick="filtrarLeads('fria')" style="border-color:#4fa3e0;color:#4fa3e0">🧊 Fríos</button>
+    <button class="filter-btn" onclick="filtrarLeads('lead')" >Sin contactar</button>
+  </div>
+
+  <!-- STATS -->
+  <div style="padding:6px 14px;border-bottom:1px solid var(--border);font-size:11px;color:var(--muted);flex-shrink:0" id="leadsStats" style="display:none"></div>
+
+  <!-- LISTA LEADS -->
+  <div style="flex:1;overflow-y:auto;padding:10px 14px;display:flex;flex-direction:column;gap:8px" id="leadsList">
+    <div style="text-align:center;color:var(--muted);padding:40px 16px;font-size:12px">
+      <div style="font-size:28px;margin-bottom:8px">🎯</div>
+      Pega el link CSV de tu hoja Leads y toca Cargar
+    </div>
+  </div>
+</div>
+
 <!-- FICHA MODAL -->
 <div class="modal-overlay" id="fichaOverlay" onclick="if(event.target===this)closeFicha()">
   <div class="modal">
@@ -354,6 +386,135 @@ const COLORS = ['#7c5cbf','#c9a84c','#4caf7c','#cf6679','#4fa3e0','#e07a3d','#9b
 function aColor(n) { let h=0; for (let c of n) h=(h*31+c.charCodeAt(0))%COLORS.length; return COLORS[h]; }
 function firstName(n) { return n.trim().split(' ')[0]; }
 function elId(id) { return document.getElementById(id); }
+
+// ══ LEADS ═════════════════════════════════════════════════════
+let leads = [], leadsFiltered = [], leadsFiltroActivo = 'todos';
+
+const TEMP_CONFIG = {
+  'muy_caliente': { icon:'🚀', label:'Muy caliente', color:'#c9a84c' },
+  'caliente':     { icon:'🔥', label:'Caliente',     color:'#4caf7c' },
+  'tibia':        { icon:'🌤️', label:'Tibio',        color:'#e0a84f' },
+  'fria':         { icon:'🧊', label:'Frío',          color:'#4fa3e0' },
+};
+
+async function loadLeads() {
+  let url = elId('leadsUrl').value.trim();
+  if (!url) { toast('Pega el link de tu hoja Leads', 'err'); return; }
+  if (!url.includes('output=csv')) url += (url.includes('?') ? '&' : '?') + 'output=csv';
+  toast('Cargando leads…', '');
+  try {
+    const r = await fetch(url);
+    if (!r.ok) throw new Error('No se pudo acceder');
+    const text = await r.text();
+    parseLeads(text);
+  } catch(e) { toast('Error: ' + e.message, 'err'); }
+}
+
+function parseLeads(csv) {
+  const lines = csv.replace(/^﻿/, '').split('\n').filter(l => l.trim());
+  if (lines.length < 2) { toast('La hoja está vacía', 'err'); return; }
+  const sep = lines[0].includes(';') ? ';' : ',';
+  const headers = lines[0].split(sep).map(h => h.replace(/"/g,'').trim().toLowerCase());
+  const g = (row, key) => { const i = headers.indexOf(key); return i >= 0 && i < row.length ? row[i].replace(/"/g,'').trim() : ''; };
+  leads = [];
+  for (let i = 1; i < lines.length; i++) {
+    const row = splitCSV(lines[i], sep);
+    const tel = g(row, 'telefono'), nom = g(row, 'nombre');
+    if (!tel && !nom) continue;
+    leads.push({ telefono:tel, nombre:nom||'Sin nombre', curso_interes:g(row,'curso_interes'), fecha_contacto:g(row,'fecha_contacto'), temperatura:g(row,'temperatura')||'fria', objeciones:g(row,'objeciones'), preguntas:g(row,'preguntas'), sugerencia:g(row,'sugerencia_seguimiento'), estatus:g(row,'estatus')||'lead', notas:g(row,'notas'), msg:'' });
+  }
+  if (!leads.length) { toast('No encontré leads', 'err'); return; }
+  leadsFiltered = [...leads];
+  elId('leadsFiltros').style.display = 'flex';
+  elId('leadsStats').style.display = 'block';
+  renderLeads();
+  toast(leads.length + ' leads cargados ✓', 'ok');
+}
+
+function filtrarLeads(filtro) {
+  leadsFiltroActivo = filtro;
+  document.querySelectorAll('#leadsFiltros .filter-btn').forEach(b => b.classList.remove('on'));
+  event.currentTarget.classList.add('on');
+  if (filtro === 'todos') leadsFiltered = [...leads];
+  else if (filtro === 'lead') leadsFiltered = leads.filter(l => l.estatus === 'lead');
+  else leadsFiltered = leads.filter(l => l.temperatura === filtro);
+  renderLeads();
+}
+
+function estatusLeadLabel(e) {
+  return { lead:'📍 Lead', contactado:'📞 Contactado', convertido:'✅ Convertido', descartado:'🚫 Desc.' }[e] || e;
+}
+
+function renderLeads() {
+  const el = elId('leadsList'); el.innerHTML = '';
+  const muyC=leads.filter(l=>l.temperatura==='muy_caliente').length, cal=leads.filter(l=>l.temperatura==='caliente').length;
+  const tib=leads.filter(l=>l.temperatura==='tibia').length, fri=leads.filter(l=>l.temperatura==='fria').length;
+  elId('leadsStats').textContent = leads.length + ' leads · 🚀' + muyC + ' 🔥' + cal + ' 🌤' + tib + ' 🧊' + fri;
+  if (!leadsFiltered.length) { el.innerHTML = '<div style="text-align:center;color:var(--muted);padding:30px;font-size:12px">No hay leads con ese filtro</div>'; return; }
+  leadsFiltered.forEach(l => {
+    const idx = leads.indexOf(l);
+    const tc = TEMP_CONFIG[l.temperatura] || TEMP_CONFIG['fria'];
+    const card = document.createElement('div');
+    card.style.cssText = 'background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:0';
+    card.innerHTML =
+      '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">'
+      + '<div class="avatar" style="background:'+aColor(l.nombre)+';width:38px;height:38px;font-size:15px;cursor:default">'+l.nombre.charAt(0).toUpperCase()+'</div>'
+      + '<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700">'+l.nombre+'</div>'
+      + '<div style="font-size:10px;color:var(--muted)">'+( l.telefono||'Sin tel')+(l.fecha_contacto?' · '+l.fecha_contacto:'')+'</div></div>'
+      + '<span style="font-size:10px;padding:3px 8px;border-radius:20px;background:'+tc.color+'22;color:'+tc.color+';font-weight:700;white-space:nowrap">'+tc.icon+' '+tc.label+'</span>'
+      + '</div>'
+      + (l.curso_interes ? '<div style="font-size:11px;color:var(--vl);margin-bottom:6px">📚 '+l.curso_interes+'</div>' : '')
+      + (l.sugerencia ? '<div style="font-size:11px;color:var(--muted);line-height:1.5;margin-bottom:8px;padding:6px 8px;background:var(--surface);border-radius:6px">💡 '+l.sugerencia+'</div>' : '')
+      + '<div id="leadLoad'+idx+'" class="msg-loading"><div class="spinner"></div>Generando…</div>'
+      + '<div id="leadMsg'+idx+'" class="msg-preview'+(l.msg?' show':'')+'">'+l.msg+'</div>'
+      + '<div style="display:flex;gap:5px;margin-top:8px">'
+      + '<button onclick="genLead('+idx+')" style="flex:1;border:1px solid var(--violet);border-radius:8px;padding:7px 3px;background:var(--surface);color:var(--vl);font-size:9px;font-weight:700;cursor:pointer;font-family:Lato,sans-serif">'+(l.msg?'🔄':'✨')+' '+(l.msg?'Regen':'Generar')+'</button>'
+      + '<button onclick="openWALead('+idx+')" style="flex:1;border:1px solid '+(l.telefono&&l.msg?'#25d366':'var(--border)')+'  ;border-radius:8px;padding:7px 3px;background:var(--surface);color:'+(l.telefono&&l.msg?'#25d366':'var(--muted)')+';font-size:9px;font-weight:700;cursor:pointer;font-family:Lato,sans-serif">💬 WA</button>'
+      + '<button onclick="copyLead('+idx+')" style="flex:1;border:1px solid var(--border);border-radius:8px;padding:7px 3px;background:var(--surface);color:var(--text);font-size:9px;font-weight:700;cursor:pointer;font-family:Lato,sans-serif">📋 Copiar</button>'
+      + '<button onclick="cycleEstatus('+idx+', this)" style="flex:1;border:1px solid var(--border);border-radius:8px;padding:7px 3px;background:var(--surface);color:var(--muted);font-size:9px;font-weight:700;cursor:pointer;font-family:Lato,sans-serif">'+estatusLeadLabel(l.estatus)+'</button>'
+      + '</div>';
+    el.appendChild(card);
+  });
+}
+
+function cycleEstatus(idx, btn) {
+  const orden = ['lead','contactado','convertido','descartado'];
+  const l = leads[idx];
+  l.estatus = orden[(orden.indexOf(l.estatus)+1) % orden.length];
+  btn.textContent = estatusLeadLabel(l.estatus);
+}
+
+async function genLead(idx) {
+  const l = leads[idx];
+  const loadEl = elId('leadLoad'+idx), msgEl = elId('leadMsg'+idx);
+  if (loadEl) loadEl.classList.add('show');
+  if (msgEl)  msgEl.classList.remove('show');
+  const prompt = 'Eres Ricardo Flores, fundador de la Academia Luz Arcana (cursos espirituales: Tarot, Runas, Astrología, Numerología, Herbolaria, Yoga, Mindfulness y más).\n\nEscribe un mensaje de WhatsApp de seguimiento para este lead en voz de Ricardo — español mexicano natural, tuteo (tú, no vos), cercano, directo, con jiribilla muy suave, máximo 2 emojis.\n\nLEAD:\n- Nombre: '+l.nombre+'\n- Curso que preguntó: '+(l.curso_interes||'no especificado')+'\n- Temperatura: '+l.temperatura+'\n- Preguntas que hizo: '+(l.preguntas||'ninguna')+'\n- Objeciones: '+(l.objeciones||'ninguna')+'\n- Contexto de seguimiento: '+(l.sugerencia||'ninguno')+'\n- Fecha de contacto: '+(l.fecha_contacto||'reciente')+'\n\nREGLAS:\n- SOLO el cuerpo del mensaje, sin comillas ni explicaciones\n- Saluda con su primer nombre\n- Menciona el curso que le interesó de forma natural\n- Máximo 4 oraciones\n- Máximo 2 emojis\n- Firma: *Ricardo / Luz Arcana*';
+  try {
+    const res = await fetch(API_ENDPOINT, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ model:'claude-haiku-4-5', max_tokens:400, messages:[{role:'user',content:prompt}] }) });
+    if (!res.ok) throw new Error('Error '+res.status);
+    const data = await res.json();
+    l.msg = (data.content||[]).map(b=>b.text||'').join('').trim();
+    if (loadEl) loadEl.classList.remove('show');
+    if (msgEl)  { msgEl.textContent = l.msg; msgEl.classList.add('show'); }
+    renderLeads();
+  } catch(e) { if (loadEl) loadEl.classList.remove('show'); toast('Error: '+e.message, 'err'); }
+}
+
+function openWALead(idx) {
+  const l = leads[idx];
+  if (!l.msg) { toast('Genera el mensaje primero', 'err'); return; }
+  if (!l.telefono) { toast('Sin teléfono', 'err'); return; }
+  window.open('https://wa.me/'+cleanPhone(l.telefono)+'?text='+encodeURIComponent(l.msg), '_blank');
+  l.estatus = 'contactado'; renderLeads();
+}
+
+function copyLead(idx) {
+  const l = leads[idx];
+  if (!l.msg) { toast('Genera el mensaje primero', 'err'); return; }
+  navigator.clipboard.writeText(l.msg).then(() => toast('Copiado 📋', 'ok'));
+}
+
 function toast(msg, type='') {
   const t = elId('toast');
   t.textContent = msg; t.className = 'toast show ' + type;
@@ -413,7 +574,7 @@ function mailPrefix(m) {
 
 // ══ NAV ════════════════════════════════════════════════════════
 function showNav(name) {
-  ['mensajes','aviso','conv'].forEach(s => {
+  ['mensajes','aviso','conv','leads'].forEach(s => {
     const p = elId('page-' + s);
     p.style.display = s === name ? 'flex' : 'none';
     if (s === name) p.style.flexDirection = 'column';
