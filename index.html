@@ -1127,12 +1127,13 @@ function applyFilters() {
   countEl.classList.toggle('on', activeCount > 0);
 
   filtered = clients.filter(c => {
-    // Búsqueda: nombre O últimos 10 dígitos del teléfono
+    // Búsqueda: nombre O teléfono (últimos N dígitos, desde 4)
     if (q) {
-      const qDigits = q.replace(/\D/g,'').slice(-10);
-      const waDigits = (c.whatsapp||'').replace(/\D/g,'').slice(-10);
+      const qDigits = q.replace(/\D/g,'');
+      const waDigits = (c.whatsapp||'').replace(/\D/g,'');
       const nameMatch = c.nombre.toLowerCase().includes(q);
-      const phoneMatch = qDigits.length >= 7 && waDigits.includes(qDigits);
+      // Si escriben solo dígitos (4 o más), buscar como terminación del teléfono
+      const phoneMatch = qDigits.length >= 4 && waDigits.endsWith(qDigits);
       if (!nameMatch && !phoneMatch) return false;
     }
 
