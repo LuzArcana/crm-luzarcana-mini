@@ -2046,6 +2046,21 @@ function filtrarLeads(filtro){
   renderLeads();
 }
 function estatusLeadLabel(e){return{lead:'📍 Lead',contactado:'📞 Contactado',convertido:'✅ Convertido',descartado:'🚫 Desc.'}[e]||e;}
+function etapaBadge(l){
+  const et=l.etapa||'lead_nuevo';
+  const ct=l.contactos||0;
+  const MAP={
+    'lead_nuevo':              ['var(--muted)','📍','Nuevo'],
+    'en_seguimiento':          ['#e0a84f','📨','Seg. '+ct+'x'],
+    'cierre_elegante':         ['var(--red)','🔚','Último intento'],
+    'pendiente_comprobante':   ['var(--gold)','💳','Espera comprobante'],
+    'pendiente_registro':      ['var(--vl)','📝','Espera registro'],
+    'convertido':              ['var(--green)','✅','Convertido'],
+    'descartado':              ['var(--muted)','🚫','Descartado'],
+  };
+  const c=MAP[et]||MAP['lead_nuevo'];
+  return '<div style="display:inline-flex;align-items:center;gap:4px;font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;border:1px solid '+c[0]+'44;color:'+c[0]+';margin-bottom:6px">'+c[1]+' '+c[2]+'</div>';
+}
 function renderLeads(){
   const el=elId('leadsList');el.innerHTML='';
   const muyC=leads.filter(l=>l.temperatura==='muy_caliente').length,cal=leads.filter(l=>l.temperatura==='caliente').length,tib=leads.filter(l=>l.temperatura==='tibia').length,fri=leads.filter(l=>l.temperatura==='fria').length;
@@ -2057,7 +2072,7 @@ function renderLeads(){
     card.innerHTML='<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><div class="avatar" style="background:'+aColor(l.nombre)+';width:38px;height:38px;font-size:15px;cursor:default">'+l.nombre.charAt(0).toUpperCase()+'</div><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700">'+l.nombre+'</div><div style="font-size:10px;color:var(--muted)">'+(l.telefono||'Sin tel')+'</div>'+((l.fecha_contacto||l.fecha_procesado)?(function(){var ref=l.fecha_procesado||l.fecha_contacto;var t=tiempoTranscurrido(ref);return'<div style="font-size:10px;font-weight:700;color:'+(t&&t.urgente?'#e07a3d':'var(--muted)')+'">⏱ '+l.fecha_contacto+(t?' · '+t.texto:'')+(t&&t.urgente?' ⚡':'')+'</div>';})():'')+
     '</div><span style="font-size:10px;padding:3px 8px;border-radius:20px;background:'+tc.color+'22;color:'+tc.color+';font-weight:700;white-space:nowrap">'+tc.icon+' '+tc.label+'</span></div>'+
     (l.curso_interes?'<div style="font-size:11px;color:var(--vl);margin-bottom:6px">📚 '+l.curso_interes+'</div>':'')+
-    (function(){const et=l.etapa||'lead_nuevo';const ct=l.contactos||0;const MAP={'lead_nuevo':['var(--muted)','📍','Nuevo'],'en_seguimiento':['#e0a84f','📨','Seguimiento '+ct+'x'],'cierre_elegante':['var(--red)','🔚','Último intento'],'pendiente_comprobante':['var(--gold)','💳','Espera comprobante'],'pendiente_registro':['var(--vl)','📝','Espera registro'],'convertido':['var(--green)','✅','Convertido'],'descartado':['var(--muted)','🚫','Descartado']};const c=MAP[et]||MAP['lead_nuevo'];return '<div style="display:inline-flex;align-items:center;gap:4px;font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;border:1px solid '+c[0]+'44;color:'+c[0]+';margin-bottom:6px">'+c[1]+' '+c[2]+'</div>';})()+'
+    etapaBadge(l)+
     (l.sugerencia?'<div style="font-size:11px;color:var(--muted);line-height:1.5;margin-bottom:8px;padding:6px 8px;background:var(--surface);border-radius:6px">💡 '+l.sugerencia+'</div>':'')+
     '<div id="leadLoad'+idx+'" class="msg-loading"><div class="spinner"></div>Generando…</div>'+
     '<div id="leadMsg'+idx+'" class="msg-preview'+(l.msg?' show':'')+'">'+l.msg+'</div>'+
