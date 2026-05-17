@@ -2119,23 +2119,17 @@ function toggleNivelSelector(idx){
 }
 
 function pickNivel(idx, nivel, btn){
-  // Highlight del chip seleccionado
-  const sel=elId('nivelSel'+idx);
-  sel.querySelectorAll('.nivel-chip').forEach(b=>{
-    b.style.borderColor='var(--border)';
+  // Highlight del chip seleccionado — resetear todos los de este card
+  document.querySelectorAll('.nivel-chip-'+idx).forEach(b=>{
+    b.style.borderColor = nivel===5 ? 'var(--border)' : 'var(--border)';
     b.style.color='var(--muted)';
     b.style.background='var(--card)';
   });
-  btn.style.borderColor='var(--gold)';
-  btn.style.color='var(--gold)';
+  btn.style.borderColor = nivel===5 ? 'var(--red)' : 'var(--gold)';
+  btn.style.color = nivel===5 ? 'var(--red)' : 'var(--gold)';
   btn.style.background='#231c30';
   // Guardar nivel elegido en el lead
   leads[idx]._nivelManual=nivel;
-  // Generar después de un pequeño delay para que vean el highlight
-  setTimeout(()=>{
-    if(sel) sel.style.display='none';
-    genLead(idx);
-  }, 200);
 }
 
 async function genLead(idx){
