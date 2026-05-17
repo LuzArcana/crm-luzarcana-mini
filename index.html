@@ -390,19 +390,25 @@ function elId(id) { return document.getElementById(id); }
 // ══ LEADS ═════════════════════════════════════════════════════
 function tiempoTranscurrido(fechaStr) {
   if (!fechaStr) return null;
-  // Parse DD/MM/YYYY
-  const parts = fechaStr.split('/');
-  if (parts.length !== 3) return null;
-  const d = new Date(parts[2], parts[1]-1, parts[0]);
+  let d;
+  // Si viene como ISO (2026-05-17T00:56:01.311Z) parsear directo
+  if (fechaStr.includes('T') || fechaStr.includes('-')) {
+    d = new Date(fechaStr);
+  } else {
+    // Parse DD/MM/YYYY — asumir mediodia hora local para no perder el día
+    const parts = fechaStr.split('/');
+    if (parts.length !== 3) return null;
+    d = new Date(parseInt(parts[2]), parseInt(parts[1])-1, parseInt(parts[0]), 12, 0, 0);
+  }
   if (isNaN(d.getTime())) return null;
   const ahora = new Date();
   const diffMs = ahora - d;
   const horas = Math.floor(diffMs / (1000 * 60 * 60));
+  const mins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
   const dias = Math.floor(horas / 24);
-  const horasResto = horas % 24;
-  if (horas < 1) return { texto: 'Hace menos de 1 hora', urgente: true, horas: 0 };
+  if (horas < 1) return { texto: `Hace ${mins} min`, urgente: true, horas: 0 };
   if (horas < 24) return { texto: `Hace ${horas} hora${horas>1?'s':''}`, urgente: true, horas };
-  if (dias < 2) return { texto: `Hace ${horas} horas (${dias} día)`, urgente: false, horas };
+  if (dias === 1) return { texto: `Hace 1 día`, urgente: false, horas };
   return { texto: `Hace ${dias} días`, urgente: false, horas };
 }
 
@@ -440,7 +446,7 @@ function parseLeads(csv) {
     const row = splitCSV(lines[i], sep);
     const tel = g(row, 'telefono'), nom = g(row, 'nombre');
     if (!tel && !nom) continue;
-    leads.push({ telefono:tel, nombre:nom||'Sin nombre', curso_interes:g(row,'curso_interes'), fecha_contacto:g(row,'fecha_contacto'), temperatura:g(row,'temperatura')||'fria', objeciones:g(row,'objeciones'), preguntas:g(row,'preguntas'), sugerencia:g(row,'sugerencia_seguimiento'), estatus:g(row,'estatus')||'lead', notas:g(row,'notas'), msg:'' });
+    leads.push({ telefono:tel, nombre:nom||'Sin nombre', curso_interes:g(row,'curso_interes'), fecha_contacto:g(row,'fecha_contacto'), fecha_procesado:g(row,'fecha_procesado'), temperatura:g(row,'temperatura')||'fria', objeciones:g(row,'objeciones'), preguntas:g(row,'preguntas'), sugerencia:g(row,'sugerencia_seguimiento'), estatus:g(row,'estatus')||'lead', notas:g(row,'notas'), msg:'' });
   }
   if (!leads.length) { toast('No encontré leads', 'err'); return; }
   leadsFiltered = [...leads];
@@ -480,7 +486,7 @@ function renderLeads() {
       + '<div class="avatar" style="background:'+aColor(l.nombre)+';width:38px;height:38px;font-size:15px;cursor:default">'+l.nombre.charAt(0).toUpperCase()+'</div>'
       + '<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700">'+l.nombre+'</div>'
       + '<div style="font-size:10px;color:var(--muted)">'+( l.telefono||'Sin tel')+'</div>'
-      + (l.fecha_contacto ? (function(){ var t=tiempoTranscurrido(l.fecha_contacto); return '<div style="font-size:10px;font-weight:700;color:'+(t&&t.urgente?'#e07a3d':'var(--muted)')+'">⏱ '+l.fecha_contacto+(t?' · '+t.texto:'')+(t&&t.urgente?' ⚡':'')+'</div>'; })() : '')
+      + ((l.fecha_contacto||l.fecha_procesado) ? (function(){ var ref=l.fecha_procesado||l.fecha_contacto; var t=tiempoTranscurrido(ref); return '<div style="font-size:10px;font-weight:700;color:'+(t&&t.urgente?'#e07a3d':'var(--muted)')+'">⏱ '+l.fecha_contacto+(t?' · '+t.texto:'')+(t&&t.urgente?' ⚡':'')+'</div>'; })() : '')
       + '</div>'
       + '<span style="font-size:10px;padding:3px 8px;border-radius:20px;background:'+tc.color+'22;color:'+tc.color+';font-weight:700;white-space:nowrap">'+tc.icon+' '+tc.label+'</span>'
       + '</div>'
