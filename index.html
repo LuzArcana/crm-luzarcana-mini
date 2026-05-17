@@ -9,9 +9,12 @@
 :root{--bg:#0d0b14;--surface:#16121f;--card:#1e1829;--border:#2e2540;--gold:#c9a84c;--violet:#7c5cbf;--vl:#9b7de0;--text:#e8dff5;--muted:#8a7fa0;--green:#4caf7c;--red:#cf6679;--r:12px}
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--bg);color:var(--text);font-family:'Lato',sans-serif;font-size:14px;height:100vh;display:flex;flex-direction:column;overflow:hidden}
-header{background:linear-gradient(135deg,#1a1128,#0d0b14);border-bottom:1px solid var(--border);padding:12px 16px 8px;text-align:center;flex-shrink:0}
+header{background:linear-gradient(135deg,#1a1128,#0d0b14);border-bottom:1px solid var(--border);padding:12px 16px 8px;text-align:center;flex-shrink:0;position:relative}
 header h1{font-family:'Cinzel',serif;font-size:15px;color:var(--gold);letter-spacing:3px}
 header p{font-size:9px;color:var(--muted);letter-spacing:1.5px;margin-top:1px}
+.auth-badge{position:absolute;top:50%;right:12px;transform:translateY(-50%);font-size:9px;padding:3px 8px;border-radius:20px;font-weight:700;cursor:pointer;border:none;font-family:'Lato',sans-serif}
+.auth-badge.connected{background:#0d1f14;color:var(--green);border:1px solid var(--green)}
+.auth-badge.disconnected{background:#2d1a1f;color:var(--red);border:1px solid var(--red)}
 .nav-tabs{display:flex;border-bottom:1px solid var(--border);background:var(--surface);flex-shrink:0}
 .nav-tab{flex:1;padding:9px 4px;border:none;border-bottom:2px solid transparent;background:transparent;color:var(--muted);font-size:10px;font-weight:700;cursor:pointer;font-family:'Lato',sans-serif;letter-spacing:.5px;transition:all .2s}
 .nav-tab.on{border-bottom-color:var(--gold);color:var(--gold)}
@@ -89,13 +92,10 @@ header p{font-size:9px;color:var(--muted);letter-spacing:1.5px;margin-top:1px}
 .cbt.wa.off{border-color:var(--border);color:var(--muted);cursor:not-allowed;opacity:.4}
 .cbt.cp:hover{border-color:var(--gold);color:var(--gold)}
 .cbt.chk.done{border-color:var(--green);color:var(--green);background:#0d1f14}
-
-/* ── AUTO-LOAD SCREEN ── */
 .autoload-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:12px;padding:24px}
 .autoload-spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite}
 .autoload-txt{font-size:12px;color:var(--muted);text-align:center;line-height:1.6}
 .autoload-txt b{color:var(--gold)}
-
 .load-screen{display:flex;flex-direction:column;padding:16px;gap:10px;overflow-y:auto;flex:1}
 .load-screen .welcome{text-align:center;padding:8px 0 4px}
 .load-screen .welcome .wicon{font-size:32px;margin-bottom:6px}
@@ -130,10 +130,58 @@ input[type=text]::placeholder{color:var(--muted)}
 .abt.cp:hover{border-color:var(--gold);color:var(--gold)}
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;display:none;align-items:flex-end}
 .modal-overlay.show{display:flex}
-.modal{background:var(--surface);border-radius:20px 20px 0 0;width:100%;padding:20px;max-height:75vh;overflow-y:auto}
+.modal{background:var(--surface);border-radius:20px 20px 0 0;width:100%;padding:20px;max-height:85vh;overflow-y:auto}
 .modal-field{background:var(--card);border-radius:8px;padding:9px 11px;margin-bottom:7px}
 .modal-field .lbl{font-size:9px;color:var(--gold);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:2px}
 .modal-field .val{font-size:12px;color:var(--text)}
+
+/* ── FICHA EDITABLE ── */
+.ficha-section-title{font-size:9px;color:var(--gold);letter-spacing:2px;text-transform:uppercase;font-family:'Cinzel',serif;margin:14px 0 8px;padding-top:12px;border-top:1px solid var(--border)}
+.edit-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #1a1528}
+.edit-lbl{font-size:10px;color:var(--muted);width:100px;flex-shrink:0}
+.edit-val{flex:1;font-size:12px;color:var(--text);cursor:pointer;padding:3px 6px;border-radius:6px;border:1px solid transparent;transition:all .2s;min-height:24px}
+.edit-val:hover{border-color:var(--border);background:var(--card)}
+.edit-val.editing{border-color:var(--violet);background:var(--card);outline:none;cursor:text}
+.edit-val select{background:var(--card);border:none;color:var(--text);font-family:'Lato',sans-serif;font-size:12px;outline:none;width:100%}
+.save-btn{font-size:9px;padding:4px 8px;border-radius:6px;border:1px solid var(--green);color:var(--green);background:transparent;cursor:pointer;font-family:'Lato',sans-serif;font-weight:700;display:none;white-space:nowrap}
+.save-btn.show{display:block}
+.saving-dot{width:8px;height:8px;border-radius:50%;background:var(--gold);animation:pulse .8s ease infinite;display:none}
+.saving-dot.show{display:block}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* ── GRID DE MESES ── */
+.meses-title{font-size:9px;color:var(--gold);letter-spacing:2px;text-transform:uppercase;font-family:'Cinzel',serif;margin:14px 0 6px;padding-top:12px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.year-nav{display:flex;align-items:center;gap:8px}
+.year-btn{background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:4px;width:20px;height:20px;cursor:pointer;font-size:10px;display:flex;align-items:center;justify-content:center}
+.year-label{font-size:10px;color:var(--text);font-family:'Lato',sans-serif;letter-spacing:0}
+.meses-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:10px}
+.mes-cell{border:1px solid var(--border);border-radius:6px;padding:6px 4px;text-align:center;cursor:pointer;transition:all .2s;background:var(--card)}
+.mes-cell:hover{border-color:var(--vl)}
+.mes-cell.actual{border:2px solid var(--violet)}
+.mes-cell .mn{font-size:9px;color:var(--muted);margin-bottom:2px}
+.mes-cell .mv{font-size:10px;font-weight:700;color:var(--muted)}
+.mes-cell.pagado{background:#0d1f14}.mes-cell.pagado .mv{color:var(--green)}
+.mes-cell.aviso{background:#1f1505}.mes-cell.aviso .mv{color:#e0a84f}
+.mes-cell.beca{background:#0d1020}.mes-cell.beca .mv{color:#7a9fe0}
+.mes-cell.prorroga{background:#1a0d20}.mes-cell.prorroga .mv{color:var(--vl)}
+.mes-cell.monto .mv{color:var(--gold)}
+
+/* ── MINI EDITOR MES ── */
+.mes-editor{background:var(--card);border:1px solid var(--violet);border-radius:8px;padding:10px;margin-bottom:8px;display:none}
+.mes-editor.show{display:block}
+.mes-editor .me-title{font-size:10px;color:var(--vl);margin-bottom:8px;font-weight:700}
+.mes-opts{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px}
+.mes-opt{font-size:10px;padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:var(--surface);color:var(--muted);cursor:pointer;font-family:'Lato',sans-serif;transition:all .2s}
+.mes-opt:hover{border-color:var(--vl);color:var(--text)}
+.mes-opt.on{border-color:var(--gold);color:var(--gold);background:#231c30}
+.mes-custom-input{display:flex;gap:6px;align-items:center}
+.mes-custom-input input{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'Lato',sans-serif;font-size:12px;padding:5px 8px;outline:none}
+.mes-custom-input input:focus{border-color:var(--violet)}
+.mes-save-btn{background:var(--violet);color:#fff;border:none;border-radius:6px;padding:5px 12px;font-family:'Lato',sans-serif;font-size:10px;font-weight:700;cursor:pointer}
+.mes-cancel{background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:6px;padding:5px 10px;font-family:'Lato',sans-serif;font-size:10px;cursor:pointer}
+.deuda-alert{background:#2d1a1f;border:1px solid var(--red);border-radius:6px;padding:6px 10px;font-size:10px;color:var(--red);margin-bottom:8px;display:none}
+.deuda-alert.show{display:block}
+
 .toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--violet);color:#fff;padding:8px 18px;border-radius:20px;font-size:12px;font-weight:700;z-index:999;transition:transform .3s;white-space:nowrap;pointer-events:none}
 .toast.show{transform:translateX(-50%) translateY(0)}
 .toast.ok{background:var(--green)}.toast.err{background:var(--red)}
@@ -144,6 +192,7 @@ input[type=text]::placeholder{color:var(--muted)}
 <header>
   <h1>✦ LUZ ARCANA ✦</h1>
   <p>GENERADOR DE MENSAJES</p>
+  <button class="auth-badge disconnected" id="authBadge" onclick="handleAuthClick()">● Sin Google</button>
 </header>
 
 <div class="nav-tabs">
@@ -155,8 +204,6 @@ input[type=text]::placeholder{color:var(--muted)}
 
 <!-- ══════════════ MENSAJES ══════════════ -->
 <div id="page-mensajes" style="flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0">
-
-  <!-- PANEL MOOD (colapsable) -->
   <div class="top-panel" id="topPanel">
     <div class="panel-toggle" onclick="togglePanel()">
       <span class="ptitle" id="panelTitle">✦ Elige un mood</span>
@@ -195,7 +242,6 @@ input[type=text]::placeholder{color:var(--muted)}
     </div>
   </div>
 
-  <!-- BARRA CONTROL (visible solo con lista cargada) -->
   <div class="ctrl-bar" id="ctrlBar">
     <button class="ctrl-btn danger" onclick="resetList()">🗑 Otra BD</button>
     <button class="ctrl-btn" onclick="reloadActivos()">🔄 Recargar Activos</button>
@@ -204,23 +250,17 @@ input[type=text]::placeholder{color:var(--muted)}
     <button class="ctrl-btn accent" onclick="openPanel()">🎭 Cambiar mood</button>
   </div>
 
-  <!-- BARRA BÚSQUEDA/STATS -->
   <div class="list-controls" id="listControls">
     <input class="search-box" id="srch" placeholder="🔍 Buscar por nombre o teléfono…" oninput="filterClients()">
     <div class="stats-pill">✅<b id="stD">0</b> ⏳<b id="stP">0</b></div>
     <button class="filter-btn" id="btnPend" onclick="togglePending()">Pendientes</button>
   </div>
 
-  <!-- PANTALLA CARGA / LISTA -->
   <div class="list-area" id="listArea">
-
-    <!-- Auto-carga inicial -->
     <div class="autoload-screen" id="autoloadScreen">
       <div class="autoload-spinner"></div>
       <div class="autoload-txt">Cargando alumnos activos<br><b>Luz Arcana · Base de Alumnos</b></div>
     </div>
-
-    <!-- Pantalla manual (si falla auto o usuario quiere otra BD) -->
     <div class="load-screen" id="loadScreen" style="display:none">
       <div class="welcome">
         <div class="wicon">✨</div>
@@ -252,8 +292,6 @@ input[type=text]::placeholder{color:var(--muted)}
         <p class="hint" id="sheetsStatus"></p>
       </div>
     </div>
-
-    <!-- Lista de clientes -->
     <div class="client-scroll" id="clientScroll" style="display:none"></div>
   </div>
 </div>
@@ -347,7 +385,7 @@ input[type=text]::placeholder{color:var(--muted)}
   </div>
 </div>
 
-<!-- FICHA MODAL -->
+<!-- ══════════════ FICHA MODAL ══════════════ -->
 <div class="modal-overlay" id="fichaOverlay" onclick="if(event.target===this)closeFicha()">
   <div class="modal">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
@@ -360,67 +398,189 @@ input[type=text]::placeholder{color:var(--muted)}
       </div>
       <button onclick="closeFicha()" style="background:var(--card);border:none;color:var(--muted);font-size:16px;width:30px;height:30px;border-radius:50%;cursor:pointer">✕</button>
     </div>
+
+    <!-- Campos de info (solo lectura) -->
     <div id="fichaFields"></div>
+
+    <!-- Sección editable -->
+    <div class="ficha-section-title">✦ Editar datos</div>
+    <div id="fichaEditRows"></div>
+
+    <!-- Alerta de deuda -->
+    <div class="deuda-alert" id="deudaAlert"></div>
+
+    <!-- Editor de mes activo -->
+    <div class="mes-editor" id="mesEditor">
+      <div class="me-title" id="mesEditorTitle">Editando: —</div>
+      <div class="mes-opts" id="mesOpts"></div>
+      <div class="mes-custom-input">
+        <input type="text" id="mesCustomVal" placeholder="o escribe un valor…">
+        <button class="mes-save-btn" onclick="saveMesValue()">Guardar</button>
+        <button class="mes-cancel" onclick="cancelMesEdit()">Cancelar</button>
+      </div>
+    </div>
+
+    <!-- Grid de meses -->
+    <div class="meses-title">
+      <span>✦ Historial de pagos</span>
+      <div class="year-nav">
+        <button class="year-btn" onclick="changeYear(-1)">◀</button>
+        <span class="year-label" id="yearLabel">2026</span>
+        <button class="year-btn" onclick="changeYear(1)">▶</button>
+      </div>
+    </div>
+    <div class="meses-grid" id="mesesGrid"></div>
+
+    <!-- Cobranza opts (original) -->
     <div id="fichaCobranzaOpts" style="display:none;margin-top:10px">
       <div style="font-size:9px;color:var(--gold);letter-spacing:1px;margin-bottom:8px;font-family:Cinzel,serif">💸 TIPO DE COBRANZA PARA ESTE ALUMNO</div>
       <div style="display:flex;flex-direction:column;gap:6px" id="fichaCobranzaBtns"></div>
     </div>
-    <button class="btn btn-outline" onclick="closeFicha()" style="margin-top:8px">Cerrar</button>
+
+    <button class="btn btn-outline" onclick="closeFicha()" style="margin-top:12px">Cerrar</button>
   </div>
 </div>
 
 <div class="toast" id="toast"></div>
 
 <script>
-// ══ CONFIGURACIÓN ══════════════════════════════════════════════
+// ══ CONFIGURACIÓN ══
 const API_ENDPOINT = '/api/claude';
-
-// ── CSV de la BD principal (hoja Activos)
 const ACTIVOS_CSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSbCds0DzdoMik_qLYOd3ppgCE04DCAIfvQjtlivHO-IQm_lbbG7Oxnxga3uByHaqP3s9ejxBE05G6_/pub?gid=0&single=true&output=csv';
-
 const DATOS_PAGO = '\n\n💳 *Ricardo Flores Valdés*\n4152 3145 7013 9538 *Tarjeta de Débito BBVA*\n012650004907020488 *Clabe*\n0490702048 *Cuenta*';
 
 const LADAS = {"55":"CDMX","56":"CDMX","33":"Jalisco","36":"Jalisco","81":"Nuevo León","222":"Puebla","221":"Puebla","224":"Puebla","477":"Guanajuato","461":"Guanajuato","462":"Guanajuato","464":"Guanajuato","473":"Guanajuato","476":"Guanajuato","442":"Querétaro","441":"Querétaro","419":"Querétaro","771":"Hidalgo","775":"Hidalgo","774":"Hidalgo","722":"Edomex","728":"Edomex","712":"Edomex","717":"Edomex","718":"Edomex","721":"Edomex","724":"Edomex","777":"Morelos","735":"Morelos","744":"Guerrero","747":"Guerrero","951":"Oaxaca","954":"Oaxaca","958":"Oaxaca","961":"Chiapas","962":"Chiapas","963":"Chiapas","964":"Chiapas","966":"Chiapas","967":"Chiapas","968":"Chiapas","999":"Yucatán","997":"Yucatán","988":"Yucatán","998":"Q. Roo","983":"Q. Roo","984":"Q. Roo","993":"Tabasco","994":"Tabasco","921":"Veracruz","229":"Veracruz","228":"Veracruz","272":"Veracruz","278":"Veracruz","282":"Veracruz","296":"Veracruz","614":"Chihuahua","656":"Chihuahua","625":"Chihuahua","639":"Chihuahua","662":"Sonora","644":"Sonora","643":"Sonora","642":"Sonora","641":"Sonora","686":"BC","664":"BC","665":"BC","646":"BC","612":"BCS","624":"BCS","618":"Durango","674":"Durango","871":"Coahuila","844":"Coahuila","861":"Coahuila","878":"Coahuila","834":"Tamaulipas","868":"Tamaulipas","833":"Tamaulipas","899":"Tamaulipas","867":"Tamaulipas","813":"Tamaulipas","312":"Colima","314":"Colima","341":"Jalisco","375":"Jalisco","351":"Jalisco","331":"Jalisco","378":"Jalisco","321":"Nayarit","311":"Nayarit","492":"Zacatecas","493":"Zacatecas","444":"SLP","481":"SLP","482":"SLP","449":"Aguascalientes","465":"Aguascalientes","434":"Michoacán","443":"Michoacán","452":"Michoacán","353":"Michoacán","913":"Campeche","981":"Campeche","922":"Veracruz","271":"Veracruz","238":"Puebla","243":"Puebla","275":"Puebla","276":"Tlaxcala","246":"Tlaxcala","241":"Tlaxcala","741":"Guerrero","756":"Guerrero","732":"Guerrero","753":"Michoacán","713":"Guerrero","767":"Morelos","787":"Guerrero"};
 
-// ══ ÍNDICES DE COLUMNAS — hoja Activos (después de arreglarHeaders) ══
-// Col 0:Tutor  1:WA_adicional  2:WhatsApp  3:Dias_transcurridos
-// Col 4:Fecha_inscripcion  5:Dias_cobro  6:Nombre  7:Apellido
-// Col 8:Correo  9:Procedencia  10:WA_adicional2  11:WhatsApp2
-// Col 12:Estatus  13:Membresia  14:Medio_pago  15:Notas  16:Afiliado
-// Col 17+: historial de pagos por mes
-const COL = {
-  tutor:       0,
-  wa_adicional:1,
-  whatsapp:    2,
-  dias_trans:  3,
-  fecha_ins:   4,
-  dias_cobro:  5,
-  nombre:      6,
-  apellido:    7,
-  correo:      8,
-  procedencia: 9,
-  wa_adicional2:10,
-  whatsapp2:   11,
-  estatus:     12,
-  membresia:   13,
-  medio_pago:  14,
-  notas:       15,
-  afiliado:    16
-};
+const COL = {tutor:0,wa_adicional:1,whatsapp:2,dias_trans:3,fecha_ins:4,dias_cobro:5,nombre:6,apellido:7,correo:8,procedencia:9,wa_adicional2:10,whatsapp2:11,estatus:12,membresia:13,medio_pago:14,notas:15,afiliado:16};
 
-// ══ ESTADO ═══════════════════════════════════════════════════
+// Meses: columna base 17 = Abr2021. Necesitamos mapear mes/año a índice de columna.
+// El Sheet empieza en Abr2021 (col índice 17 = col B de la hoja si contamos desde 0)
+const MESES_BASE_YEAR = 2021;
+const MESES_BASE_MONTH = 4; // Abril = 4
+const MESES_BASE_COL = 17; // índice de columna en el CSV (0-based)
+const MESES_NOMBRES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+
+// ══ ESTADO ══
 let clients = [], filtered = [], selectedMood = null;
 let opts = { pago: true, antispam: true };
 let showPending = false, convWAPhone = '';
+let googleConnected = false;
+let fichaIdx = -1; // índice del alumno en ficha abierta
+let fichaYear = new Date().getFullYear();
+let mesEditandoCol = -1; // col del mes que se está editando
+let rawHeaders = []; // headers del CSV para tener 98 columnas
+let rawRows = []; // todas las filas raw del CSV (para saber el valor de cada celda de pago)
 const COLORS = ['#7c5cbf','#c9a84c','#4caf7c','#cf6679','#4fa3e0','#e07a3d','#9b7de0'];
 
-// ══ HELPERS ══════════════════════════════════════════════════
+// ══ AUTH ══
+function checkAuth() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('auth') === 'ok') {
+    googleConnected = true;
+    // Limpiar URL
+    window.history.replaceState({}, '', '/');
+  }
+  if (params.get('auth_error')) {
+    toast('Error Google: ' + params.get('auth_error'), 'err');
+    window.history.replaceState({}, '', '/');
+  }
+  updateAuthBadge();
+}
+
+function updateAuthBadge() {
+  const b = elId('authBadge');
+  if (googleConnected) {
+    b.className = 'auth-badge connected';
+    b.textContent = '● Google ✓';
+  } else {
+    b.className = 'auth-badge disconnected';
+    b.textContent = '● Sin Google';
+  }
+}
+
+function handleAuthClick() {
+  if (googleConnected) {
+    toast('Ya estás conectado con Google ✓', 'ok');
+  } else {
+    window.location.href = '/api/auth';
+  }
+}
+
+// ══ ESCRITURA A SHEETS ══
+async function writeCell(sheetRow, sheetCol, value) {
+  // sheetRow: 1-based (fila 1 = headers, fila 2 = primer alumno)
+  // sheetCol: 0-based (convertimos a letra de columna)
+  const colLetter = colToLetter(sheetCol);
+  const range = `Activos!${colLetter}${sheetRow}`;
+  const res = await fetch('/api/sheets', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'writeCell', payload: { range, value } })
+  });
+  const data = await res.json();
+  if (!res.ok || data.error) throw new Error(data.error || 'Error escribiendo');
+  return data;
+}
+
+async function writeBatch(updates) {
+  // updates: [{sheetRow, sheetCol, value}, ...]
+  const mapped = updates.map(u => ({
+    range: `Activos!${colToLetter(u.sheetCol)}${u.sheetRow}`,
+    value: u.value
+  }));
+  const res = await fetch('/api/sheets', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'writeBatch', payload: { updates: mapped } })
+  });
+  const data = await res.json();
+  if (!res.ok || data.error) throw new Error(data.error || 'Error escribiendo');
+  return data;
+}
+
+function colToLetter(col) {
+  // col es 0-based, convertir a letra(s) de columna
+  let result = '';
+  col = col + 1; // 1-based
+  while (col > 0) {
+    let rem = (col - 1) % 26;
+    result = String.fromCharCode(65 + rem) + result;
+    col = Math.floor((col - 1) / 26);
+  }
+  return result;
+}
+
+function clientSheetRow(idx) {
+  // fila 1 = headers, datos desde fila 2
+  return idx + 2;
+}
+
+// Calcular columna de un mes/año en el Sheet
+function mesColIndex(year, month) {
+  // month: 1-12
+  const totalMonths = (year - MESES_BASE_YEAR) * 12 + (month - MESES_BASE_MONTH);
+  return MESES_BASE_COL + totalMonths;
+}
+
+function mesValorClass(val) {
+  if (!val || val.trim() === '') return 'vacio';
+  const v = val.toLowerCase();
+  if (v === 'pagado') return 'pagado';
+  if (v === 'beca') return 'beca';
+  if (v === 'prorroga' || v === 'prórroga') return 'prorroga';
+  if (v.includes('contacto') || v.includes('aviso')) return 'aviso';
+  if (/^\d+/.test(v)) return 'monto';
+  return 'aviso';
+}
+
+// ══ HELPERS ══
 function aColor(n){let h=0;for(let c of n)h=(h*31+c.charCodeAt(0))%COLORS.length;return COLORS[h];}
 function firstName(n){return n.trim().split(' ')[0];}
 function elId(id){return document.getElementById(id);}
 
-// ══ AUTO-CARGA AL INICIO ═════════════════════════════════════
+// ══ INIT ══
 window.addEventListener('DOMContentLoaded', () => {
+  checkAuth();
   autoLoadActivos();
 });
 
@@ -434,10 +594,9 @@ async function autoLoadActivos() {
     const text = await r.text();
     processActivosCSV(text);
   } catch(e) {
-    // Si falla, muestra pantalla manual con mensaje
     elId('autoloadScreen').style.display = 'none';
     elId('loadScreen').style.display = 'flex';
-    toast('No se pudo cargar Activos automáticamente. Carga manual.', 'err');
+    toast('No se pudo cargar Activos automáticamente.', 'err');
   }
 }
 
@@ -447,31 +606,34 @@ async function reloadActivos() {
   elId('ctrlBar').style.display = 'none';
   elId('listControls').style.display = 'none';
   elId('autoloadScreen').style.display = 'flex';
-  clients = []; filtered = [];
+  clients = []; filtered = []; rawRows = [];
   updateStats();
   await autoLoadActivos();
 }
 
-// ══ PARSER ESPECÍFICO PARA HOJA ACTIVOS ══════════════════════
-// Usa índices fijos de columna — no depende de nombres de header
+// ══ PARSER HOJA ACTIVOS ══
 function processActivosCSV(csv) {
   const lines = csv.replace(/^\uFEFF/, '').split('\n').filter(l => l.trim());
-  // Fila 0 = headers limpios, datos desde fila 1
   if (lines.length < 2) { showManualScreen('La hoja Activos está vacía'); return; }
 
+  // Guardar headers
+  rawHeaders = splitCSV(lines[0], ',');
+  rawRows = [];
   clients = [];
+
   for (let i = 1; i < lines.length; i++) {
     const row = splitCSV(lines[i], ',');
-    const g = j => (j < row.length && row[j] !== undefined) ? row[j].replace(/^"|"$/g, '').trim() : '';
+    rawRows.push(row); // guardamos fila raw completa
 
-    const nombre    = (g(COL.nombre) + ' ' + g(COL.apellido)).trim();
+    const g = j => (j < row.length && row[j] !== undefined) ? row[j].replace(/^"|"$/g, '').trim() : '';
+    const nombre = (g(COL.nombre) + ' ' + g(COL.apellido)).trim();
     if (!nombre || nombre.length < 2) continue;
 
-    // WhatsApp: primero col 2, si está vacío col 11 (WhatsApp2), si no col 1 (WA_adicional)
-    const wa_main  = cleanPhone(g(COL.whatsapp)) || cleanPhone(g(COL.whatsapp2)) || cleanPhone(g(COL.wa_adicional));
-    const wa_alt   = cleanPhone(g(COL.wa_adicional));
+    const wa_main = cleanPhone(g(COL.whatsapp)) || cleanPhone(g(COL.whatsapp2)) || cleanPhone(g(COL.wa_adicional));
+    const wa_alt  = cleanPhone(g(COL.wa_adicional));
 
     clients.push({
+      _rowIndex: i - 1, // índice en rawRows (0-based)
       nombre,
       whatsapp:    wa_main,
       wa_adicional:wa_alt,
@@ -485,8 +647,7 @@ function processActivosCSV(csv) {
       notas:       g(COL.notas),
       tutor:       g(COL.tutor),
       medio_pago:  g(COL.medio_pago),
-      msg:         '',
-      contacted:   false,
+      msg: '', contacted: false,
     });
   }
 
@@ -500,7 +661,7 @@ function showManualScreen(msg) {
   if (msg) toast(msg, 'err');
 }
 
-// ══ PARSER GENÉRICO (carga manual — por nombre de columna) ═══
+// ══ PARSERS MANUALES (sin cambios) ══
 function parsePaste() {
   const r = elId('pasteArea').value.trim();
   if (!r) { toast('Pega tu lista primero', 'err'); return; }
@@ -530,15 +691,17 @@ function processRaw(raw, sep) {
     tutor:       ic(['tutor']),
     medio_pago:  ic(['medio_pago','medio de pago']),
   };
-  clients = [];
+  clients = []; rawRows = [];
   for (let i = 1; i < lines.length; i++) {
     const c = splitCSV(lines[i], sep);
+    rawRows.push(c);
     const g = j => (j >= 0 && j < c.length) ? c[j].replace(/^"|"$/g,'').trim() : '';
     const nom = (g(idx.nombre) + ' ' + g(idx.apellido)).trim();
     if (!nom || nom.length < 2) continue;
     const wa_main = cleanPhone(g(idx.whatsapp)) || cleanPhone(g(idx.whatsapp2)) || cleanPhone(g(idx.wa_adicional));
     const wa_alt  = cleanPhone(g(idx.wa_adicional));
     clients.push({
+      _rowIndex: i - 1,
       nombre: nom, whatsapp: wa_main, wa_adicional: wa_alt,
       correo: g(idx.correo), estatus: g(idx.estatus)||'activo',
       membresia: g(idx.membresia), dias_cobro: g(idx.dias_cobro),
@@ -578,15 +741,17 @@ function processXLSX(ws) {
     tutor:       ic(['tutor']),
     medio_pago:  ic(['medio_pago','medio de pago']),
   };
-  clients = [];
+  clients = []; rawRows = [];
   for (let i = hRowIdx + 1; i < data.length; i++) {
     const row = data[i];
+    rawRows.push(row.map(r => r != null ? String(r) : ''));
     const g = j => (j >= 0 && j < row.length && row[j] != null) ? String(row[j]).trim() : '';
     const nom = (g(idx.nombre) + ' ' + g(idx.apellido)).trim();
     if (!nom || nom.length < 2) continue;
     const wa_main = cleanPhone(g(idx.whatsapp)) || cleanPhone(g(idx.whatsapp2)) || cleanPhone(g(idx.wa_adicional));
     const wa_alt  = cleanPhone(g(idx.wa_adicional));
     clients.push({
+      _rowIndex: i - hRowIdx - 1,
       nombre:nom, whatsapp:wa_main, wa_adicional:wa_alt,
       correo:g(idx.correo), estatus:g(idx.estatus)||'activo',
       membresia:g(idx.membresia), dias_cobro:g(idx.dias_cobro),
@@ -688,7 +853,7 @@ function afterLoad(esActivos) {
   toast(clients.length + ' clientes cargados ✓ — ' + src, 'ok');
 }
 
-// ══ RENDER ════════════════════════════════════════════════════
+// ══ RENDER LISTA ══
 function renderList() {
   const el = elId('clientScroll');
   el.innerHTML = '';
@@ -705,14 +870,7 @@ function renderList() {
     const ini = c.nombre.charAt(0).toUpperCase();
     const col = aColor(c.nombre);
     const _es = c.estatus.toLowerCase();
-    const bc = _es.includes('permanente')  ? 'permanente'
-             : _es.includes('embajador')   ? 'embajador'
-             : _es.includes('beca')        ? 'beca'
-             : _es.includes('conflictiva') ? 'conflictiva'
-             : _es.includes('prueba')      ? 'prueba'
-             : (_es==='solo sigilos'||_es==='solo tarot') ? 'especial'
-             : _es.includes('activo')      ? 'activo'
-             : _es.includes('revocado')    ? 'revocado' : 'default';
+    const bc = _es.includes('permanente')?'permanente':_es.includes('embajador')?'embajador':_es.includes('beca')?'beca':_es.includes('conflictiva')?'conflictiva':_es.includes('prueba')?'prueba':(_es==='solo sigilos'||_es==='solo tarot')?'especial':_es.includes('activo')?'activo':_es.includes('revocado')?'revocado':'default';
     card.innerHTML = `
       <div class="ccard-top">
         <div class="avatar" style="background:${col}" onclick="openFicha(${idx})">${ini}</div>
@@ -752,7 +910,7 @@ function togglePending() {
   renderList();
 }
 
-// ══ GENERAR MENSAJE ═══════════════════════════════════════════
+// ══ GENERAR MENSAJE ══
 async function genForClient(idx) {
   if (!selectedMood) { toast('Elige un mood primero ↑','err'); openPanel(); return; }
   const c = clients[idx];
@@ -827,7 +985,8 @@ ${isCobranzaMsg?`- Incluye el precio específico\n- NUNCA digas que el pago da a
   }
 }
 
-function openWAClient(idx) {
+// ── Al abrir WA de cobranza → anotar aviso automáticamente
+async function openWAClient(idx) {
   const c=clients[idx];
   if(!c.msg){toast('Genera el mensaje primero','err');return;}
   if(!c.whatsapp){toast('Este cliente no tiene teléfono','err');return;}
@@ -837,7 +996,49 @@ function openWAClient(idx) {
   if(chkEl){chkEl.classList.add('done');chkEl.innerHTML='<span class="ci">✅</span>Listo';}
   const card=chkEl?.closest('.ccard');
   if(card) card.classList.add('sent');
+
+  // Si es cobranza y hay Google conectado → anotar aviso en mes actual
+  const isCobranza = selectedMood && (selectedMood.includes('cobranza') || selectedMood==='cobranza');
+  if (isCobranza && googleConnected) {
+    await anotarAvisoAutomatic(idx);
+  }
 }
+
+async function anotarAvisoAutomatic(idx) {
+  const c = clients[idx];
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth() + 1; // 1-12
+  const colIdx = mesColIndex(year, month);
+  const sheetRow = clientSheetRow(idx);
+
+  // Ver valor actual del mes
+  const rawRow = rawRows[c._rowIndex] || [];
+  const valorActual = (rawRow[colIdx] || '').replace(/^"|"$/g,'').trim();
+
+  let nuevoValor;
+  if (!valorActual || valorActual === '') {
+    nuevoValor = '1er contacto';
+  } else if (valorActual.toLowerCase() === '1er contacto') {
+    nuevoValor = '2do contacto';
+  } else if (valorActual.toLowerCase() === '2do contacto') {
+    nuevoValor = '3er contacto';
+  } else {
+    // Ya tiene valor (pagado, monto, etc.) — no sobreescribir
+    return;
+  }
+
+  try {
+    await writeCell(sheetRow, colIdx, nuevoValor);
+    // Actualizar rawRows en memoria
+    if (!rawRows[c._rowIndex]) rawRows[c._rowIndex] = [];
+    rawRows[c._rowIndex][colIdx] = nuevoValor;
+    toast(`Anotado: ${nuevoValor} en ${MESES_NOMBRES[month-1]} ✓`, 'ok');
+  } catch(e) {
+    toast('No se pudo anotar el aviso: ' + e.message, 'err');
+  }
+}
+
 function copyClient(idx) {
   const c=clients[idx];
   if(!c.msg){toast('Genera el mensaje primero','err');return;}
@@ -845,8 +1046,13 @@ function copyClient(idx) {
 }
 function toggleContacted(idx){clients[idx].contacted=!clients[idx].contacted;updateStats();renderList();}
 
-// ══ FICHA MODAL ══════════════════════════════════════════════
+// ══ FICHA MODAL ══
 function openFicha(idx) {
+  fichaIdx = idx;
+  fichaYear = new Date().getFullYear();
+  mesEditandoCol = -1;
+  elId('mesEditor').classList.remove('show');
+
   const c=clients[idx], col=aColor(c.nombre);
   elId('fichaAv').style.background=col;
   elId('fichaAv').textContent=c.nombre.charAt(0).toUpperCase();
@@ -854,22 +1060,26 @@ function openFicha(idx) {
   const _ef=c.estatus.toLowerCase();
   const ec=_ef.includes('permanente')?'#9b7de0':_ef.includes('embajador')?'#c9a84c':_ef.includes('beca')?'#7a9fe0':_ef.includes('conflictiva')?'#e06090':_ef.includes('prueba')?'#a0c060':_ef.includes('activo')?'#4caf7c':_ef.includes('revocado')?'#cf6679':'#8a7fa0';
   elId('fichaSt').innerHTML='<span style="background:'+ec+'22;color:'+ec+';padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700">'+c.estatus+'</span>';
+
   const ins=diasConNosotros(c.fecha_ins);
   const fields=[
     {l:'📅 Inscripción',         v:ins?ins.fecha:(c.fecha_ins||'—')},
     {l:'⏳ Tiempo con nosotros', v:ins?formatDias(ins.dias):(c.dias_trans?c.dias_trans+' días':'—')},
-    {l:'🗓 Día de cobro',        v:c.dias_cobro?'Día '+c.dias_cobro+' de cada mes':'—'},
-    {l:'💰 Precio mensual',      v:precioDeEstatus(c.estatus)||'—'},
-    {l:'💳 Medio de pago',       v:c.medio_pago||'—'},
-    {l:'📱 WhatsApp',            v:c.whatsapp||'—'},
-    {l:'📱 WA adicional',        v:c.wa_adicional||'—'},
-    {l:'📧 Correo',              v:c.correo||'—'},
     {l:'🌍 Estado',              v:c.whatsapp?getEstado(c.whatsapp):'—'},
     {l:'🔗 Procedencia',         v:c.procedencia||'—'},
-    {l:'👤 Tutor',               v:c.tutor||'—'},
-    {l:'📝 Notas',               v:c.notas||'—'},
   ];
   elId('fichaFields').innerHTML=fields.map(f=>`<div class="modal-field"><div class="lbl">${f.l}</div><div class="val">${f.v}</div></div>`).join('');
+
+  // Filas editables
+  renderEditRows(idx);
+
+  // Alerta de deuda
+  renderDeudaAlert(idx);
+
+  // Grid de meses
+  renderMesesGrid(idx, fichaYear);
+
+  // Cobranza opts
   const isCobranza=selectedMood&&selectedMood.includes('cobranza');
   const cobranzaBox=elId('fichaCobranzaOpts');
   cobranzaBox.style.display=isCobranza?'block':'none';
@@ -878,36 +1088,258 @@ function openFicha(idx) {
     const anualidad=monto?monto*10:null;
     const btns=elId('fichaCobranzaBtns');
     btns.innerHTML=`
-      <button onclick="setCobranzaTipo('normal',${clients.indexOf(c)})" style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:9px 12px;text-align:left;cursor:pointer;color:var(--text);font-family:Lato,sans-serif;width:100%">
+      <button onclick="setCobranzaTipo('normal',${idx})" style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:9px 12px;text-align:left;cursor:pointer;color:var(--text);font-family:Lato,sans-serif;width:100%">
         <div style="font-size:12px;font-weight:700">💸 Cobranza normal</div>
         <div style="font-size:10px;color:var(--muted)">Recordatorio de mensualidad ${precio||''}</div>
       </button>
-      <button onclick="setCobranzaTipo('migracion',${clients.indexOf(c)})" style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:9px 12px;text-align:left;cursor:pointer;color:var(--text);font-family:Lato,sans-serif;width:100%">
+      <button onclick="setCobranzaTipo('migracion',${idx})" style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:9px 12px;text-align:left;cursor:pointer;color:var(--text);font-family:Lato,sans-serif;width:100%">
         <div style="font-size:12px;font-weight:700">⭐ Migración a permanente</div>
         <div style="font-size:10px;color:var(--muted)">Ya no habrá mensualidades — con descuento especial</div>
         <div style="display:flex;align-items:center;gap:6px;margin-top:5px">
           <span style="font-size:10px;color:var(--gold)">Descuento: $</span>
-          <input type="number" id="descuentoFicha_${clients.indexOf(c)}" placeholder="monto" onclick="event.stopPropagation()" style="width:80px;background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;padding:4px 8px;outline:none">
+          <input type="number" id="descuentoFicha_${idx}" placeholder="monto" onclick="event.stopPropagation()" style="width:80px;background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;padding:4px 8px;outline:none">
         </div>
       </button>
-      ${anualidad?`<button onclick="setCobranzaTipo('anualidad_viejitos',${clients.indexOf(c)})" style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:9px 12px;text-align:left;cursor:pointer;color:var(--text);font-family:Lato,sans-serif;width:100%">
+      ${anualidad?`<button onclick="setCobranzaTipo('anualidad_viejitos',${idx})" style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:9px 12px;text-align:left;cursor:pointer;color:var(--text);font-family:Lato,sans-serif;width:100%">
         <div style="font-size:12px;font-weight:700">🎉 Anualidad — $${anualidad}</div>
         <div style="font-size:10px;color:var(--muted)">Pago único = acceso para siempre (${precio} × 10)</div>
       </button>`:''}`;
   }
+
   elId('fichaOverlay').classList.add('show');
 }
-function closeFicha(){elId('fichaOverlay').classList.remove('show');}
+
+function renderEditRows(idx) {
+  const c = clients[idx];
+  const editFields = [
+    { lbl: '📱 WhatsApp',     key: 'whatsapp',     col: COL.whatsapp,   type: 'text' },
+    { lbl: '📱 WA adicional', key: 'wa_adicional', col: COL.wa_adicional, type: 'text' },
+    { lbl: '📧 Correo',       key: 'correo',       col: COL.correo,     type: 'text' },
+    { lbl: '🏷 Estatus',      key: 'estatus',      col: COL.estatus,    type: 'select', opts: ['activo','permanente','revocado','prorroga','beca','conflictiva','prueba'] },
+    { lbl: '💎 Membresía',    key: 'membresia',    col: COL.membresia,  type: 'text' },
+    { lbl: '💳 Medio pago',   key: 'medio_pago',   col: COL.medio_pago, type: 'text' },
+    { lbl: '🗓 Día cobro',    key: 'dias_cobro',   col: COL.dias_cobro, type: 'text' },
+    { lbl: '👤 Tutor',        key: 'tutor',        col: COL.tutor,      type: 'text' },
+    { lbl: '📝 Notas',        key: 'notas',        col: COL.notas,      type: 'text' },
+  ];
+
+  const container = elId('fichaEditRows');
+  container.innerHTML = '';
+
+  editFields.forEach(f => {
+    const row = document.createElement('div');
+    row.className = 'edit-row';
+    const val = c[f.key] || '';
+
+    if (f.type === 'select') {
+      row.innerHTML = `
+        <span class="edit-lbl">${f.lbl}</span>
+        <div class="edit-val" style="padding:0">
+          <select onchange="saveEditField(${idx}, '${f.key}', ${f.col}, this.value)" style="background:var(--card);border:none;color:var(--text);font-family:Lato,sans-serif;font-size:12px;outline:none;width:100%;padding:3px 6px">
+            ${f.opts.map(o => `<option value="${o}" ${val.toLowerCase().includes(o)?'selected':''}>${o}</option>`).join('')}
+          </select>
+        </div>
+        <div class="saving-dot" id="dot_${f.key}"></div>`;
+    } else {
+      row.innerHTML = `
+        <span class="edit-lbl">${f.lbl}</span>
+        <span class="edit-val" id="ev_${f.key}" contenteditable="false" onclick="startEdit(this, '${f.key}')">${val || '—'}</span>
+        <button class="save-btn" id="sb_${f.key}" onclick="saveEditField(${idx}, '${f.key}', ${f.col}, document.getElementById('ev_${f.key}').textContent)">Guardar</button>
+        <div class="saving-dot" id="dot_${f.key}"></div>`;
+    }
+    container.appendChild(row);
+  });
+}
+
+function startEdit(el, key) {
+  el.contentEditable = 'true';
+  el.classList.add('editing');
+  el.focus();
+  // Seleccionar todo el texto
+  const range = document.createRange();
+  range.selectNodeContents(el);
+  window.getSelection().removeAllRanges();
+  window.getSelection().addRange(range);
+  const sb = elId('sb_' + key);
+  if (sb) sb.classList.add('show');
+  el.onblur = () => {
+    // No cancelar automáticamente para que puedan clickear Guardar
+  };
+  el.onkeydown = (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); el.blur(); }
+    if (e.key === 'Escape') { cancelEdit(el, key); }
+  };
+}
+
+function cancelEdit(el, key) {
+  el.contentEditable = 'false';
+  el.classList.remove('editing');
+  const sb = elId('sb_' + key);
+  if (sb) sb.classList.remove('show');
+}
+
+async function saveEditField(idx, key, colIdx, newVal) {
+  if (!googleConnected) {
+    toast('Conéctate con Google primero (botón arriba)', 'err');
+    return;
+  }
+  const c = clients[idx];
+  newVal = newVal.trim();
+  if (newVal === '—') newVal = '';
+
+  const dot = elId('dot_' + key);
+  const sb  = elId('sb_' + key);
+  const ev  = elId('ev_' + key);
+
+  if (dot) dot.classList.add('show');
+  if (sb)  sb.classList.remove('show');
+  if (ev)  { ev.contentEditable = 'false'; ev.classList.remove('editing'); }
+
+  try {
+    const sheetRow = clientSheetRow(idx);
+    await writeCell(sheetRow, colIdx, newVal);
+    // Actualizar en memoria
+    c[key] = newVal;
+    if (rawRows[c._rowIndex]) rawRows[c._rowIndex][colIdx] = newVal;
+    if (dot) dot.classList.remove('show');
+    toast('✓ Guardado', 'ok');
+    // Si cambió estatus, refrescar badge
+    if (key === 'estatus') {
+      renderList();
+    }
+  } catch(e) {
+    if (dot) dot.classList.remove('show');
+    toast('Error: ' + e.message, 'err');
+  }
+}
+
+// ── Alerta de deuda
+function renderDeudaAlert(idx) {
+  const c = clients[idx];
+  const rawRow = rawRows[c._rowIndex] || [];
+  const now = new Date();
+  const mesActual = now.getMonth() + 1;
+  const yearActual = now.getFullYear();
+
+  const mesesDeuda = [];
+  // Revisar los últimos 6 meses
+  for (let i = 5; i >= 1; i--) {
+    let m = mesActual - i;
+    let y = yearActual;
+    if (m <= 0) { m += 12; y--; }
+    const colIdx = mesColIndex(y, m);
+    const val = (rawRow[colIdx] || '').replace(/^"|"$/g,'').trim().toLowerCase();
+    if (!val || val === '') {
+      mesesDeuda.push(MESES_NOMBRES[m-1] + ' ' + y);
+    }
+  }
+
+  const alert = elId('deudaAlert');
+  if (mesesDeuda.length > 0) {
+    alert.textContent = '⚠️ Meses sin registrar: ' + mesesDeuda.join(', ');
+    alert.classList.add('show');
+  } else {
+    alert.classList.remove('show');
+  }
+}
+
+// ── Grid de meses
+function renderMesesGrid(idx, year) {
+  const c = clients[idx];
+  const rawRow = rawRows[c._rowIndex] || [];
+  const now = new Date();
+  const mesActual = now.getMonth() + 1;
+  const yearActual = now.getFullYear();
+
+  elId('yearLabel').textContent = year;
+  const grid = elId('mesesGrid');
+  grid.innerHTML = '';
+
+  for (let m = 1; m <= 12; m++) {
+    const colIdx = mesColIndex(year, m);
+    const raw = rawRow[colIdx] || '';
+    const val = raw.replace(/^"|"$/g,'').trim();
+    const cls = mesValorClass(val);
+    const esActual = (m === mesActual && year === yearActual);
+
+    const cell = document.createElement('div');
+    cell.className = 'mes-cell ' + cls + (esActual ? ' actual' : '');
+    cell.innerHTML = `<div class="mn">${MESES_NOMBRES[m-1]}${esActual?' ←':''}</div><div class="mv">${val || '—'}</div>`;
+    cell.onclick = () => openMesEditor(idx, year, m, colIdx, val);
+    grid.appendChild(cell);
+  }
+}
+
+function changeYear(delta) {
+  fichaYear += delta;
+  renderMesesGrid(fichaIdx, fichaYear);
+  elId('mesEditor').classList.remove('show');
+}
+
+function openMesEditor(idx, year, month, colIdx, valorActual) {
+  mesEditandoCol = colIdx;
+  const editor = elId('mesEditor');
+  elId('mesEditorTitle').textContent = `Editando: ${MESES_NOMBRES[month-1]} ${year}`;
+  elId('mesCustomVal').value = valorActual || '';
+
+  const opciones = ['pagado','beca','prorroga','1er contacto','2do contacto','3er contacto',''];
+  const opts = elId('mesOpts');
+  opts.innerHTML = opciones.map(o =>
+    `<span class="mes-opt${o===valorActual?' on':''}" onclick="selectMesOpt(this,'${o}')">${o||'(vacío)'}</span>`
+  ).join('');
+
+  editor.classList.add('show');
+  editor.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function selectMesOpt(el, val) {
+  document.querySelectorAll('.mes-opt').forEach(o => o.classList.remove('on'));
+  el.classList.add('on');
+  elId('mesCustomVal').value = val;
+}
+
+async function saveMesValue() {
+  if (!googleConnected) {
+    toast('Conéctate con Google primero', 'err');
+    return;
+  }
+  const val = elId('mesCustomVal').value.trim();
+  const sheetRow = clientSheetRow(fichaIdx);
+  const c = clients[fichaIdx];
+
+  try {
+    await writeCell(sheetRow, mesEditandoCol, val);
+    // Actualizar rawRows en memoria
+    if (!rawRows[c._rowIndex]) rawRows[c._rowIndex] = [];
+    rawRows[c._rowIndex][mesEditandoCol] = val;
+    elId('mesEditor').classList.remove('show');
+    renderMesesGrid(fichaIdx, fichaYear);
+    renderDeudaAlert(fichaIdx);
+    toast('✓ Mes actualizado', 'ok');
+  } catch(e) {
+    toast('Error: ' + e.message, 'err');
+  }
+}
+
+function cancelMesEdit() {
+  elId('mesEditor').classList.remove('show');
+  mesEditandoCol = -1;
+}
+
+function closeFicha(){
+  elId('fichaOverlay').classList.remove('show');
+  fichaIdx = -1;
+}
 function setCobranzaTipo(tipo,idx){
   const c=clients[idx]; c._cobranzaTipo=tipo;
   if(tipo==='migracion'){const d=elId('descuentoFicha_'+idx); c._descuento=d?d.value:'';}
   closeFicha(); genForClient(idx);
 }
 
-// ══ CONTROLES ════════════════════════════════════════════════
+// ══ CONTROLES ══
 function resetList() {
   if(!confirm('¿Cargar otra BD? Se borrarán los clientes actuales.')) return;
-  clients=[]; filtered=[];
+  clients=[]; filtered=[]; rawRows=[];
   elId('ctrlBar').style.display='none';
   elId('listControls').style.display='none';
   elId('clientScroll').style.display='none';
@@ -921,7 +1353,7 @@ function resetList() {
 function resetMsgs(){if(!confirm('¿Borrar todos los mensajes generados?'))return;clients.forEach(c=>c.msg='');renderList();toast('Mensajes borrados ✓','ok');}
 function resetContacted(){clients.forEach(c=>c.contacted=false);updateStats();renderList();toast('Enviados reseteados ☐','ok');}
 
-// ══ DATOS DE ALUMNO ══════════════════════════════════════════
+// ══ DATOS ══
 function diasConNosotros(fechaStr) {
   if(!fechaStr) return null;
   const s=fechaStr.trim(); let d=null;
@@ -937,7 +1369,7 @@ function precioDeEstatus(est){const m=est.match(/\$?\s*(\d{2,4})/);return m?'$'+
 function getEstado(wa){const d=wa.replace(/\D/g,'');const n=d.startsWith('52')?d.slice(2):d;return LADAS[n.slice(0,3)]||LADAS[n.slice(0,2)]||'México';}
 function mailPrefix(m){if(!m)return'sin-correo@';const s=m.split(',')[0].trim();const i=s.indexOf('@');return i>0?s.slice(0,i)+'@':s;}
 
-// ══ NAV ══════════════════════════════════════════════════════
+// ══ NAV ══
 function showNav(name){
   ['mensajes','aviso','conv','leads'].forEach(s=>{
     const p=elId('page-'+s);
@@ -948,7 +1380,7 @@ function showNav(name){
   if(name==='leads'&&!leads.length) loadLeads();
 }
 
-// ══ PANEL MOOD ═══════════════════════════════════════════════
+// ══ PANEL MOOD ══
 function togglePanel(){elId('topPanel').classList.toggle('collapsed');}
 function openPanel(){elId('topPanel').classList.remove('collapsed');}
 function closePanel(){elId('topPanel').classList.add('collapsed');}
@@ -974,7 +1406,7 @@ function getMoodLabel(mood){
 }
 function togOpt(k){opts[k]=!opts[k];elId('tog-'+k).classList.toggle('on',opts[k]);}
 
-// ══ TABS ════════════════════════════════════════════════════
+// ══ TABS ══
 function swtab(n){
   document.querySelectorAll('#loadScreen .tab').forEach((b,i)=>b.classList.toggle('on',['paste','file','sheets'][i]===n));
   document.querySelectorAll('#loadScreen .tab-panel').forEach(p=>p.classList.remove('on'));
@@ -986,7 +1418,7 @@ function swConv(n){
   elId('conv-'+n).classList.add('on');
 }
 
-// ══ PLANTILLA CSV ════════════════════════════════════════════
+// ══ PLANTILLA CSV ══
 function downloadTemplate(){
   const cols='Tutor,WA_adicional,WhatsApp,Dias_transcurridos,Fecha_inscripcion,Dias_cobro,Nombre,Apellido,Correo,Procedencia,WA_adicional2,WhatsApp2,Estatus,Membresia,Medio_pago,Notas,Afiliado';
   const ejemplo=',,+5215512345678,,15/01/2024,1,María,González,maria@gmail.com,Instagram,,,activo $197,mensual,transferencia,,';
@@ -996,7 +1428,7 @@ function downloadTemplate(){
   toast('Plantilla descargada 📥','ok');
 }
 
-// ══ AVISO COMUNITARIO ════════════════════════════════════════
+// ══ AVISO COMUNITARIO ══
 function filtrarBD(){
   if(!clients.length){toast('Primero carga la lista en la pestaña Mensajes','err');return;}
   const dia=elId('avisoDia').value.trim();
@@ -1017,7 +1449,7 @@ function generarAviso(){
 }
 function copyAviso(){const m=elId('avisoMsg').textContent;if(m)navigator.clipboard.writeText(m).then(()=>toast('Copiado 📋','ok'));}
 
-// ══ ANÁLISIS CONVERSACIÓN ════════════════════════════════════
+// ══ ANÁLISIS CONVERSACIÓN ══
 function loadConvFile(file){
   if(!file) return;
   const r=new FileReader();
@@ -1059,7 +1491,7 @@ async function analyzeConv(){
 function copyConvMsg(){const m=elId('convMsg').textContent;if(m)navigator.clipboard.writeText(m).then(()=>toast('Copiado 📋','ok'));}
 function openConvWA(){const m=elId('convMsg').textContent;if(!convWAPhone){toast('No encontré teléfono. Copia el mensaje manualmente.','err');return;}window.open('https://wa.me/'+convWAPhone+'?text='+encodeURIComponent(m),'_blank');}
 
-// ══ LEADS (sin cambios) ═══════════════════════════════════════
+// ══ LEADS ══
 function tiempoTranscurrido(fechaStr){
   if(!fechaStr||fechaStr.trim()==='') return null;
   let d;
