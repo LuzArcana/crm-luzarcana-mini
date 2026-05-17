@@ -1073,6 +1073,26 @@ function renderList() {
         <button class="cbt chk${c.contacted?' done':''}" id="chk${idx}" onclick="toggleContacted(${idx})"><span class="ci">${c.contacted?'✅':'☐'}</span>${c.contacted?'Listo':'Marcar'}</button>
       </div>`;
     el.appendChild(card);
+    // Agregar chips de nivel con JS limpio (evita problemas de escape en innerHTML)
+    const chipsContainer=document.getElementById('nivelChips'+idx);
+    if(chipsContainer){
+      const niveles=[['1ro',1,false],['2do',2,false],['3ro',3,false],['4to',4,false],['🔚 Cierre',5,true]];
+      niveles.forEach(([label,nivel,esCierre])=>{
+        const b=document.createElement('button');
+        b.textContent=label;
+        b.dataset.nivel=nivel;
+        b.dataset.leadIdx=idx;
+        b.style.cssText='font-size:10px;padding:3px 9px;border-radius:20px;border:1px solid '+(esCierre?'var(--red)':'var(--border)')+';background:var(--card);color:'+(esCierre?'var(--red)':'var(--muted)')+';cursor:pointer;font-family:Lato,sans-serif;font-weight:700;transition:all .2s';
+        b.onclick=()=>pickNivel(idx,nivel,b);
+        // Si ya tiene nivel manual seleccionado, marcar el chip correspondiente
+        if(leads[idx]&&leads[idx]._nivelManual===nivel){
+          b.style.borderColor=esCierre?'var(--red)':'var(--gold)';
+          b.style.color=esCierre?'var(--red)':'var(--gold)';
+          b.style.background='#231c30';
+        }
+        chipsContainer.appendChild(b);
+      });
+    }
   });
 }
 
@@ -2073,6 +2093,7 @@ function renderLeads(){
     '</div><span style="font-size:10px;padding:3px 8px;border-radius:20px;background:'+tc.color+'22;color:'+tc.color+';font-weight:700;white-space:nowrap">'+tc.icon+' '+tc.label+'</span></div>'+
     (l.curso_interes?'<div style="font-size:11px;color:var(--vl);margin-bottom:6px">📚 '+l.curso_interes+'</div>':'')+
     etapaBadge(l)+
+    '<div id="nivelSel'+idx+'" style="margin-bottom:6px"><div style="font-size:9px;color:var(--muted);letter-spacing:.5px;margin-bottom:4px;text-transform:uppercase">📨 Nivel de mensaje</div><div id="nivelChips'+idx+'" style="display:flex;gap:4px;flex-wrap:wrap"></div></div>'+
     (l.sugerencia?'<div style="font-size:11px;color:var(--muted);line-height:1.5;margin-bottom:8px;padding:6px 8px;background:var(--surface);border-radius:6px">💡 '+l.sugerencia+'</div>':'')+
     '<div id="leadLoad'+idx+'" class="msg-loading"><div class="spinner"></div>Generando…</div>'+
     '<div id="leadMsg'+idx+'" class="msg-preview'+(l.msg?' show':'')+'">'+l.msg+'</div>'+
@@ -2083,6 +2104,26 @@ function renderLeads(){
     '<button onclick="cycleEstatus('+idx+', this)" style="flex:1;border:1px solid var(--border);border-radius:8px;padding:7px 3px;background:var(--surface);color:var(--muted);font-size:9px;font-weight:700;cursor:pointer;font-family:Lato,sans-serif">'+estatusLeadLabel(l.estatus)+'</button>'+
     '</div>';
     el.appendChild(card);
+    // Agregar chips de nivel con JS limpio (evita problemas de escape en innerHTML)
+    const chipsContainer=document.getElementById('nivelChips'+idx);
+    if(chipsContainer){
+      const niveles=[['1ro',1,false],['2do',2,false],['3ro',3,false],['4to',4,false],['🔚 Cierre',5,true]];
+      niveles.forEach(([label,nivel,esCierre])=>{
+        const b=document.createElement('button');
+        b.textContent=label;
+        b.dataset.nivel=nivel;
+        b.dataset.leadIdx=idx;
+        b.style.cssText='font-size:10px;padding:3px 9px;border-radius:20px;border:1px solid '+(esCierre?'var(--red)':'var(--border)')+';background:var(--card);color:'+(esCierre?'var(--red)':'var(--muted)')+';cursor:pointer;font-family:Lato,sans-serif;font-weight:700;transition:all .2s';
+        b.onclick=()=>pickNivel(idx,nivel,b);
+        // Si ya tiene nivel manual seleccionado, marcar el chip correspondiente
+        if(leads[idx]&&leads[idx]._nivelManual===nivel){
+          b.style.borderColor=esCierre?'var(--red)':'var(--gold)';
+          b.style.color=esCierre?'var(--red)':'var(--gold)';
+          b.style.background='#231c30';
+        }
+        chipsContainer.appendChild(b);
+      });
+    }
   });
 }
 async function cycleEstatus(idx,btn){
@@ -2119,16 +2160,21 @@ function toggleNivelSelector(idx){
 }
 
 function pickNivel(idx, nivel, btn){
-  // Highlight del chip seleccionado — resetear todos los de este card
-  document.querySelectorAll('.nivel-chip-'+idx).forEach(b=>{
-    b.style.borderColor = nivel===5 ? 'var(--border)' : 'var(--border)';
-    b.style.color='var(--muted)';
-    b.style.background='var(--card)';
-  });
-  btn.style.borderColor = nivel===5 ? 'var(--red)' : 'var(--gold)';
-  btn.style.color = nivel===5 ? 'var(--red)' : 'var(--gold)';
+  // Resetear todos los chips de este card
+  const container=document.getElementById('nivelChips'+idx);
+  if(container){
+    container.querySelectorAll('button').forEach(b=>{
+      const n=parseInt(b.dataset.nivel);
+      b.style.borderColor=n===5?'var(--red)':'var(--border)';
+      b.style.color=n===5?'var(--red)':'var(--muted)';
+      b.style.background='var(--card)';
+    });
+  }
+  // Marcar el seleccionado
+  btn.style.borderColor=nivel===5?'var(--red)':'var(--gold)';
+  btn.style.color=nivel===5?'var(--red)':'var(--gold)';
   btn.style.background='#231c30';
-  // Guardar nivel elegido en el lead
+  // Guardar nivel elegido
   leads[idx]._nivelManual=nivel;
 }
 
