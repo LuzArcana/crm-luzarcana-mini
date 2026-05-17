@@ -2206,35 +2206,28 @@ CURSO: Tarot — $620 pago único (beca promocional, puede terminar). Incluye: 3
 LEAD:
 - Nombre: ${l.nombre||'no dado'}
 - Temperatura: ${l.temperatura||'fria'}
-- Etapa CRM: ${etapa} (${contactos} contacto${contactos!==1?'s':''})
-- Estatus: ${l.estatus||'lead'}
-- ¿Cierre elegante?: ${esCierreElegante?'SÍ — es el último mensaje, tono cálido de cierre sin presión, ofrecer conservar beca si se arrepiente':'NO'}
-- Curso interés: ${l.curso_interes||'Tarot'}
-- Objeción detectada: ${l.objeciones||'ninguna'}
-- Preguntas previas: ${l.preguntas||'ninguna'}
-- Contexto adicional: ${l.sugerencia||'ninguno'}
-- Tiempo desde contacto: ${tiempoTxt}${esUrgente?' ⚡ menos de 24h — menciona que viste su mensaje recién':''}
-- Nivel de seguimiento: ${nivelLabel} (${nivelSeg} de 5)
-- Contactos enviados registrados: ${l.contactos||0}
+- Curso: ${l.curso_interes||'Tarot'}
+- Objeción: ${l.objeciones||'ninguna'}
+- Preguntas: ${l.preguntas||'ninguna'}
+- Contexto: ${l.sugerencia||'ninguno'}
+- Tiempo desde contacto: ${tiempoTxt}${esUrgente?' ⚡ menos de 24h':''}
 
-FLUJO CORRECTO — detecta el paso actual y apunta al siguiente:
-informa → resuelve dudas → cierra → datos de pago → espera comprobante → liga de registro → espera registro → bienvenida
+INSTRUCCIÓN PRINCIPAL — estás enviando el mensaje número ${nivelSeg}:
+${nivelSeg===1?`PRIMER CONTACTO: Es el primer mensaje. Preséntate brevemente, menciona que viste su interés en el Tarot. No des toda la info del curso, solo abre conversación. Pregunta qué la motivó a buscar el Tarot (para ella, para leer a otros, para cobrar). Tono: cálido y curioso.`:
+nivelSeg===2?`SEGUNDO CONTACTO: Ya hubo un primer mensaje, no respondió o no avanzó. NO repitas lo del primer mensaje. Cambia el ángulo: habla del diferenciador (no la dejan sola, práctica semanal, tutora). Menciona que la beca de $620 puede terminar. Haz UNA pregunta directa sobre su duda específica.`:
+nivelSeg===3?`TERCER CONTACTO: Dos mensajes previos sin avance. Cambia completamente el ángulo — habla desde lo emocional o desde una historia de alumna que dudó y luego agradeció haber entrado. NO menciones el precio todavía. Pregunta si sigue interesada o si hay algo que la frenó.`:
+nivelSeg===4?`CUARTO CONTACTO: Tres mensajes previos. Sé muy directo pero sin presión. Di que entiendes si no es el momento. Menciona que la beca de $620 no va a estar disponible siempre. Ofrécele apartar su lugar sin pagar todo ahora. Pregunta si quiere que le reserves el precio.`:
+`CIERRE ELEGANTE — ÚLTIMO MENSAJE: No vuelvas a escribirle después de este. Tono cálido, sin presión, sin venta. Di que no quieres molestarla más. Deja la puerta abierta: si algún día quiere entrar, aquí estarás. Ofrece que te avise si quiere que le respetes la beca. Sin pregunta de cierre agresiva — solo calidez y despedida.`}
 
-REGLAS CRÍTICAS (no romper ninguna):
-- NUNCA mencionar liga de registro si no mandó comprobante
-- Etapa "pendiente comprobante": NO vender, solo pedir comprobante
-- Etapa "pendiente registro": pedir que complete el registro
-- Nivel ≥ 2: mensaje distinto y más avanzado, nunca repetir seguimiento anterior
-- Objeción dinero: ofrecer apartar beca para conservar precio ($620)
-- Objeción "lo pienso": preguntar qué duda específica — precio, tiempo o confianza
-- Objeción "no tengo don" / miedo al Tarot: tranquilizar — no necesita don, necesita práctica y guía ética
-- Temperatura muy_caliente/caliente: cierre directo, pregunta que asume que sí entra
-- Temperatura tibia: reforzar valor, micro-compromiso suave, generar conversación
-- Temperatura fria: reabrir con pregunta simple, sin presión ni venta directa
-- Si ya recibió info del curso: NO repetirla, partir del punto donde quedó
-- El objetivo no siempre es cerrar ya — a veces es avanzar un solo paso
+REGLAS IRROMPIBLES:
+- NUNCA mencionar liga de registro
+- Etapa pendiente_comprobante: solo pedir comprobante, no vender
+- Cada mensaje debe sonar completamente diferente al anterior en estructura y ángulo
+- Temperatura fria: sin presión, solo abrir conversación
+- Temperatura caliente/muy_caliente: más directo, asumir que sí quiere entrar
+- Objeción dinero → ofrecer apartar beca; "lo pienso" → preguntar qué duda concreta
 
-TONO: español mexicano, tuteo (tú, nunca vos), cálido y directo, jiribilla muy suave, nunca vendedor de humo ni robot. Máx 2 emojis. Máx 5 oraciones. Siempre cerrar con pregunta o micro-compromiso. Firma: *Ricardo / Luz Arcana* ✨
+TONO: Ricardo Flores, español mexicano, tuteo (tú nunca vos), jiribilla muy suave, nunca vendedor de humo. Máx 2 emojis. Máx 5 oraciones. Firma: *Ricardo / Luz Arcana* ✨
 
 Devuelve SOLO el cuerpo del mensaje, sin comillas ni explicaciones.`;
 
