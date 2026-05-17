@@ -2109,16 +2109,49 @@ async function cycleEstatus(idx,btn){
     }catch(e){/* silencioso */}
   }
 }
+function toggleNivelSelector(idx){
+  const sel=elId('nivelSel'+idx);
+  if(!sel) return;
+  const visible=sel.style.display!=='none';
+  // Cerrar todos los otros selectores abiertos
+  document.querySelectorAll('[id^="nivelSel"]').forEach(s=>s.style.display='none');
+  sel.style.display=visible?'none':'block';
+}
+
+function pickNivel(idx, nivel, btn){
+  // Highlight del chip seleccionado
+  const sel=elId('nivelSel'+idx);
+  sel.querySelectorAll('.nivel-chip').forEach(b=>{
+    b.style.borderColor='var(--border)';
+    b.style.color='var(--muted)';
+    b.style.background='var(--card)';
+  });
+  btn.style.borderColor='var(--gold)';
+  btn.style.color='var(--gold)';
+  btn.style.background='#231c30';
+  // Guardar nivel elegido en el lead
+  leads[idx]._nivelManual=nivel;
+  // Generar después de un pequeño delay para que vean el highlight
+  setTimeout(()=>{
+    if(sel) sel.style.display='none';
+    genLead(idx);
+  }, 200);
+}
+
 async function genLead(idx){
   const l=leads[idx],loadEl=elId('leadLoad'+idx),msgEl=elId('leadMsg'+idx);
   if(loadEl) loadEl.classList.add('show');
   if(msgEl)  msgEl.classList.remove('show');
 
-  // Nivel de seguimiento — usa contactos reales del Sheet
-  const contactos=l.contactos||0;
-  const etapa=l.etapa||'lead_nuevo';
-  const esCierreElegante=etapa==='cierre_elegante'||contactos>=3;
-  const nivelSeg=contactos===0?1:contactos===1?2:contactos===2?3:4;
+  // Nivel — usa el elegido manualmente si existe, si no usa el del Sheet
+  const nivelManual=l._nivelManual||0;
+  const contactos=nivelManual>0?nivelManual-1:l.contactos||0;
+  const etapa=nivelManual===5?'cierre_elegante':(l.etapa||'lead_nuevo');
+  const esCierreElegante=nivelManual===5||etapa==='cierre_elegante'||contactos>=4;
+  const nivelSeg=nivelManual>0?nivelManual:(contactos===0?1:contactos===1?2:contactos===2?3:contactos===3?4:5);
+  const nivelLabel=['','1er contacto','2do contacto','3er contacto','4to contacto','Cierre elegante'][nivelSeg]||('Contacto '+nivelSeg);
+  // Limpiar nivel manual después de usarlo
+  l._nivelManual=0;
 
   // Tiempo transcurrido
   const tiempoRef=l.fecha_procesado||l.fecha_contacto;
@@ -2135,13 +2168,14 @@ LEAD:
 - Temperatura: ${l.temperatura||'fria'}
 - Etapa CRM: ${etapa} (${contactos} contacto${contactos!==1?'s':''})
 - Estatus: ${l.estatus||'lead'}
-- ¿Cierre elegante?: ${esCierreElegante?'SÍ — último intento, tono de cierre elegante sin presión':'NO'}
+- ¿Cierre elegante?: ${esCierreElegante?'SÍ — es el último mensaje, tono cálido de cierre sin presión, ofrecer conservar beca si se arrepiente':'NO'}
 - Curso interés: ${l.curso_interes||'Tarot'}
 - Objeción detectada: ${l.objeciones||'ninguna'}
 - Preguntas previas: ${l.preguntas||'ninguna'}
 - Contexto adicional: ${l.sugerencia||'ninguno'}
 - Tiempo desde contacto: ${tiempoTxt}${esUrgente?' ⚡ menos de 24h — menciona que viste su mensaje recién':''}
-- Nivel de seguimiento: ${nivelSeg} / contactos enviados: ${contactos}
+- Nivel de seguimiento: ${nivelLabel} (${nivelSeg} de 5)
+- Contactos enviados registrados: ${l.contactos||0}
 
 FLUJO CORRECTO — detecta el paso actual y apunta al siguiente:
 informa → resuelve dudas → cierra → datos de pago → espera comprobante → liga de registro → espera registro → bienvenida
