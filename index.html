@@ -287,20 +287,31 @@ input[type=text]::placeholder{color:var(--muted)}
       <span class="ft-arrow">▲</span>
     </div>
     <div class="filtros-body">
-      <!-- Año + Mes (estos siguen siendo select único) -->
+      <!-- Año + Meses -->
       <div class="frow">
-        <span class="frow-label">📅 Mes</span>
-        <select class="fsel" id="fAnio" onchange="applyFilters()">
+        <span class="frow-label">📅 Año</span>
+        <select class="fsel" id="fAnio" onchange="applyFilters()" style="max-width:90px">
           <option value="">— Año —</option>
         </select>
-        <select class="fsel" id="fMes" onchange="applyFilters()">
-          <option value="">— Mes —</option>
-          <option value="1">Ene</option><option value="2">Feb</option><option value="3">Mar</option>
-          <option value="4">Abr</option><option value="5">May</option><option value="6">Jun</option>
-          <option value="7">Jul</option><option value="8">Ago</option><option value="9">Sep</option>
-          <option value="10">Oct</option><option value="11">Nov</option><option value="12">Dic</option>
-        </select>
         <button class="fclear" onclick="clearFilters()" style="margin-left:auto">✕ Limpiar</button>
+      </div>
+      <!-- Meses: chips multiselect -->
+      <div class="fchips-wrap">
+        <span class="fchips-label">📅 Mes</span>
+        <div class="fchips" id="chipsMes">
+          <span class="fchip" data-filter="mes" data-val="1" onclick="toggleChip(this)">Ene</span>
+          <span class="fchip" data-filter="mes" data-val="2" onclick="toggleChip(this)">Feb</span>
+          <span class="fchip" data-filter="mes" data-val="3" onclick="toggleChip(this)">Mar</span>
+          <span class="fchip" data-filter="mes" data-val="4" onclick="toggleChip(this)">Abr</span>
+          <span class="fchip" data-filter="mes" data-val="5" onclick="toggleChip(this)">May</span>
+          <span class="fchip" data-filter="mes" data-val="6" onclick="toggleChip(this)">Jun</span>
+          <span class="fchip" data-filter="mes" data-val="7" onclick="toggleChip(this)">Jul</span>
+          <span class="fchip" data-filter="mes" data-val="8" onclick="toggleChip(this)">Ago</span>
+          <span class="fchip" data-filter="mes" data-val="9" onclick="toggleChip(this)">Sep</span>
+          <span class="fchip" data-filter="mes" data-val="10" onclick="toggleChip(this)">Oct</span>
+          <span class="fchip" data-filter="mes" data-val="11" onclick="toggleChip(this)">Nov</span>
+          <span class="fchip" data-filter="mes" data-val="12" onclick="toggleChip(this)">Dic</span>
+        </div>
       </div>
       <!-- Estado del mes: chips -->
       <div class="fchips-wrap">
@@ -974,7 +985,14 @@ function populateFiltros() {
     if (y === yearNow) opt.selected = true;
     anioSel.appendChild(opt);
   }
-  elId('fMes').value = new Date().getMonth() + 1;
+  // Preseleccionar mes actual en chips
+  const mesActualVal = String(new Date().getMonth() + 1);
+  document.querySelectorAll('#chipsMes .fchip').forEach(chip => {
+    if (chip.dataset.val === mesActualVal) {
+      chip.classList.add('on');
+      chipState.mes.add(mesActualVal);
+    }
+  });
 
   const uniq = (arr) => [...new Set(arr.filter(v => v && v.trim()))].sort((a,b) => {
     const na = parseFloat(a), nb = parseFloat(b);
@@ -1057,6 +1075,7 @@ function renderList() {
 // ══ FILTROS MULTISELECT ══
 // Estado de chips seleccionados por grupo
 const chipState = {
+  mes: new Set(),
   estadoMes: new Set(),
   dia: new Set(),
   estatus: new Set(),
@@ -1088,29 +1107,26 @@ function clearFilters() {
   Object.keys(chipState).forEach(k => chipState[k].clear());
   document.querySelectorAll('.fchip.on').forEach(c => c.classList.remove('on'));
   elId('fAnio').value = new Date().getFullYear();
-  elId('fMes').value = new Date().getMonth() + 1;
   elId('srch').value = '';
   applyFilters();
 }
 
 function applyFilters() {
-  const q          = (elId('srch').value || '').toLowerCase();
-  const fAnio      = parseInt(elId('fAnio').value) || 0;
-  const fMes       = parseInt(elId('fMes').value) || 0;
+  const q     = (elId('srch').value || '').toLowerCase();
+  const fAnio = parseInt(elId('fAnio').value) || 0;
 
-  const filtroMesActivo = fAnio > 0 && fMes > 0;
-  let mesColIdx = -1;
-  if (filtroMesActivo) mesColIdx = mesColIndex(fAnio, fMes);
+  // Meses seleccionados como array de números
+  const mesesSel = [...chipState.mes].map(Number);
+  const filtroMesActivo = fAnio > 0 && mesesSel.length > 0;
 
   // Contar filtros activos
   const totalChipsOn = Object.values(chipState).reduce((s, st) => s + st.size, 0);
-  const activeCount = (filtroMesActivo ? 1 : 0) + totalChipsOn;
+  const activeCount = totalChipsOn;
   const countEl = elId('filtrosCount');
   countEl.textContent = activeCount;
   countEl.classList.toggle('on', activeCount > 0);
 
   filtered = clients.filter(c => {
-    // Texto
     // Búsqueda: nombre O últimos 10 dígitos del teléfono
     if (q) {
       const qDigits = q.replace(/\D/g,'').slice(-10);
@@ -1120,41 +1136,45 @@ function applyFilters() {
       if (!nameMatch && !phoneMatch) return false;
     }
 
-    // Día de cobro (multiselect)
+    // Día de cobro
     if (chipState.dia.size > 0 && !chipState.dia.has((c.dias_cobro||'').trim())) return false;
 
-    // Estatus (multiselect — comparación normalizada)
+    // Estatus
     if (chipState.estatus.size > 0) {
       const est = (c.estatus||'').trim().toLowerCase();
       if (!chipState.estatus.has(est)) return false;
     }
 
-    // Tutor (multiselect)
+    // Tutor
     if (chipState.tutor.size > 0 && !chipState.tutor.has((c.tutor||'').trim())) return false;
 
-    // Membresía (multiselect)
+    // Membresía
     if (chipState.membresia.size > 0 && !chipState.membresia.has((c.membresia||'').trim())) return false;
 
-    // Medio pago (multiselect)
+    // Medio pago
     if (chipState.medioPago.size > 0 && !chipState.medioPago.has((c.medio_pago||'').trim())) return false;
 
-    // Procedencia (multiselect)
+    // Procedencia
     if (chipState.procedencia.size > 0 && !chipState.procedencia.has((c.procedencia||'').trim())) return false;
 
-    // Filtro de mes
-    if (filtroMesActivo && mesColIdx >= 0) {
+    // Filtro de mes — si hay estado seleccionado, al menos UN mes debe coincidir
+    if (filtroMesActivo) {
       const rawRow = rawRows[c._rowIndex] || [];
-      const rawVal = rawRow[mesColIdx];
-      const val = (rawVal === undefined || rawVal === null) ? '' : String(rawVal).replace(/^"|"$/g,'').trim();
 
       if (chipState.estadoMes.size > 0) {
-        // Verificar si el valor matchea alguno de los estados seleccionados
-        const matchesAny = [...chipState.estadoMes].some(estado => {
-          if (estado === 'vacio') return val === '' || val === '0';
-          if (estado === 'monto') return !isNaN(parseFloat(val)) && val !== '';
-          return val.toLowerCase().includes(estado.toLowerCase());
+        // La alumna debe coincidir en AL MENOS uno de los meses seleccionados
+        const matchesMes = mesesSel.some(mes => {
+          const colIdx = mesColIndex(fAnio, mes);
+          if (colIdx < 0) return false;
+          const rawVal = rawRow[colIdx];
+          const val = (rawVal === undefined || rawVal === null) ? '' : String(rawVal).replace(/^"|"$/g,'').trim();
+          return [...chipState.estadoMes].some(estado => {
+            if (estado === 'vacio') return val === '' || val === '0';
+            if (estado === 'monto') return !isNaN(parseFloat(val)) && val !== '';
+            return val.toLowerCase().includes(estado.toLowerCase());
+          });
         });
-        if (!matchesAny) return false;
+        if (!matchesMes) return false;
       }
     }
 
