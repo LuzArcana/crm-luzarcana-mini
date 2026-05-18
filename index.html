@@ -2201,7 +2201,18 @@ async function genLead(idx){
 
   const prompt=`Eres Ricardo Flores, fundador de la Academia Luz Arcana. Genera el SIGUIENTE MEJOR MENSAJE de WhatsApp para este lead.
 
-CURSO: Tarot — $620 pago único (beca promocional, puede terminar). Incluye: 31 clases grabadas, práctica Zoom lunes 7PM, grupo WA, tutora personal, acceso+acompañamiento indefinido. Sin mensualidad. Diferenciador: no dejan al alumno solo con videos, lo acompañan hasta que aprenda a leer con práctica y ética. No se necesita "tener el don", se necesita práctica y guía.
+CURSO: ${l.curso_interes||'Tarot'} — Luz Arcana
+PRECIO: $620 pago único con beca promocional (precio real llegará a $1,499-$2,499, puede subir cuando Ricardo lo decida).
+PAGO: tarjeta, transferencia bancaria o Mercado Pago.
+ACCESO: de por vida, sin límite, entran cuando quieren.
+INCLUYE:
+- Clases grabadas de teoría (pueden ver a su ritmo)
+- Zoom semanal en vivo con Ricardo (Tarot = lunes 7PM) — las sesiones se graban
+- Grupo de WhatsApp del curso (comunidad de alumnas)
+- Apoyo directo por WhatsApp con Ricardo o su equipo (1 a 1)
+- Constancia al finalizar
+SIN MENSUALIDAD. Sin fecha de inicio obligatoria.
+DIFERENCIADOR REAL: No las dejan solas con videos. Tienen práctica en vivo semanal, comunidad activa y pueden preguntar directamente. No necesitan "tener el don" — necesitan práctica, guía y constancia.
 
 LEAD:
 - Nombre: ${l.nombre||'no dado'}
