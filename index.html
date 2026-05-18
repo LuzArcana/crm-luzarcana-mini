@@ -1043,7 +1043,7 @@ function renderList() {
   // Mostrar total al inicio de la lista
   const totalDiv = document.createElement('div');
   totalDiv.style.cssText = 'text-align:center;font-size:10px;color:var(--vl);padding:4px 0;font-weight:700;letter-spacing:1px';
-  totalDiv.textContent = src.length + ' alumnas' + (src.length < clients.length ? ' (filtradas de ' + clients.length + ')' : '');
+  totalDiv.textContent = src.length + ' alumnos' + (src.length < clients.length ? ' (filtradas de ' + clients.length + ')' : '');
   el.appendChild(totalDiv);
   src.forEach(c => {
     const idx = clients.indexOf(c); // índice real en clients[]
@@ -2208,11 +2208,11 @@ ACCESO: de por vida, sin límite, entran cuando quieren.
 INCLUYE:
 - Clases grabadas de teoría (pueden ver a su ritmo)
 - Zoom semanal en vivo con Ricardo (Tarot = lunes 7PM) — las sesiones se graban
-- Grupo de WhatsApp del curso (comunidad de alumnas)
+- Grupo de WhatsApp del curso (comunidad de alumnos)
 - Apoyo directo por WhatsApp con Ricardo o su equipo (1 a 1)
 - Constancia al finalizar
 SIN MENSUALIDAD. Sin fecha de inicio obligatoria.
-DIFERENCIADOR REAL: No las dejan solas con videos. Tienen práctica en vivo semanal, comunidad activa y pueden preguntar directamente. No necesitan "tener el don" — necesitan práctica, guía y constancia.
+DIFERENCIADOR REAL: No los dejan solos con videos. Tienen práctica en vivo semanal, comunidad activa y pueden preguntar directamente. No necesitan "tener el don" — necesitan práctica, guía y constancia.
 
 LEAD:
 - Nombre: ${l.nombre||'no dado'}
@@ -2225,8 +2225,8 @@ LEAD:
 
 INSTRUCCIÓN PRINCIPAL — estás enviando el mensaje número ${nivelSeg}:
 ${nivelSeg===1?`PRIMER CONTACTO: Es el primer mensaje. Preséntate brevemente, menciona que viste su interés en el Tarot. No des toda la info del curso, solo abre conversación. Pregunta qué la motivó a buscar el Tarot (para ella, para leer a otros, para cobrar). Tono: cálido y curioso.`:
-nivelSeg===2?`SEGUNDO CONTACTO: Ya hubo un primer mensaje, no respondió o no avanzó. NO repitas lo del primer mensaje. Cambia el ángulo: habla del diferenciador (no la dejan sola, práctica semanal, tutora). Menciona que la beca de $620 puede terminar. Haz UNA pregunta directa sobre su duda específica.`:
-nivelSeg===3?`TERCER CONTACTO: Dos mensajes previos sin avance. Cambia completamente el ángulo — habla desde lo emocional o desde una historia de alumna que dudó y luego agradeció haber entrado. NO menciones el precio todavía. Pregunta si sigue interesada o si hay algo que la frenó.`:
+nivelSeg===2?`SEGUNDO CONTACTO: Ya hubo un primer mensaje, no respondió o no avanzó. NO repitas lo del primer mensaje. Cambia el ángulo: habla del diferenciador (no los dejan solos, práctica semanal en vivo, apoyo directo por WA). Menciona que la beca de $620 puede terminar. Haz UNA pregunta directa sobre su duda específica.`:
+nivelSeg===3?`TERCER CONTACTO: Dos mensajes previos sin avance. Cambia completamente el ángulo — habla desde lo emocional o desde una historia de alguien que dudó y luego agradeció haber entrado. NO menciones el precio todavía. Pregunta si sigue interesado/a o si hay algo que lo/la frenó.`:
 nivelSeg===4?`CUARTO CONTACTO: Tres mensajes previos. Sé muy directo pero sin presión. Di que entiendes si no es el momento. Menciona que la beca de $620 no va a estar disponible siempre. Ofrécele apartar su lugar sin pagar todo ahora. Pregunta si quiere que le reserves el precio.`:
 `CIERRE ELEGANTE — ÚLTIMO MENSAJE: No vuelvas a escribirle después de este. Tono cálido, sin presión, sin venta. Di que no quieres molestarla más. Deja la puerta abierta: si algún día quiere entrar, aquí estarás. Ofrece que te avise si quiere que le respetes la beca. Sin pregunta de cierre agresiva — solo calidez y despedida.`}
 
