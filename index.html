@@ -789,7 +789,9 @@ async function cargarRevocadosBackground() {
     const lines = text.replace(/^\uFEFF/, '').split('\n').filter(l => l.trim());
     for (let i = 1; i < lines.length; i++) {
       const row = splitCSV(lines[i], ',');
-      rawRowsRevocados.push(row);
+      // Solo filas con nombre válido (col 6 = Nombre)
+      const nombre = (row[6]||'').replace(/^"|"$/g,'').trim();
+      if(nombre && nombre.length >= 2) rawRowsRevocados.push(row);
     }
 
     // Si el dashboard está visible, actualizarlo con los nuevos datos
@@ -2185,10 +2187,28 @@ function esSaldado(val){
 }
 
 function montoRegistrado(val){
-  // Retorna el número si el valor tiene $xx, sino 0
-  if(!val) return 0;
-  const m=val.match(/\$\s*([\d,]+(?:\.\d+)?)/);
-  if(m) return parseFloat(m[1].replace(/,/g,''));
+  // Parsea montos correctamente en formato anglosajón ($ 149.00) o europeo ($ 149,00)
+  if(!val||!val.includes('$')) return 0;
+  let s = val.replace('$','').trim();
+  if(!s||s==='-') return 0;
+  const hasDot = s.includes('.');
+  const hasComma = s.includes(',');
+  if(hasDot && hasComma){
+    // Ambos separadores: el último es el decimal
+    if(s.lastIndexOf(',') > s.lastIndexOf('.')){
+      s = s.replace(/\./g,'').replace(',','.');  // europeo: 1.115,00 -> 1115.00
+    } else {
+      s = s.replace(/,/g,'');  // anglosajón: 1,115.00 -> 1115.00
+    }
+  } else if(hasComma && !hasDot){
+    // Solo coma: si hay 2 dígitos después = decimal europeo
+    const parts = s.split(',');
+    if(parts.length===2 && parts[1].trim().length===2) s = s.replace(',','.');
+    else s = s.replace(/,/g,'');
+  }
+  // else: solo punto = decimal normal, dejar como está
+  const num = parseFloat(s);
+  if(!isNaN(num) && num >= 10 && num <= 5000) return num;
   return 0;
 }
 
