@@ -2191,7 +2191,7 @@ function renderDashboard(){
   // Suma montos con $ en la columna del mes actual (incluyendo permanentes que pagaron este mes)
   let ingresosMes=0;
   clients.forEach(c=>{
-    if(esRevocado(c)) return;
+    // Revocados incluidos: también pagaron en su momento
     const raw=rawRows[c._rowIndex]||[];
     const val=rawMesDash(raw,anioCurr,mesCurr);
     const monto=montoRegistrado(val);
@@ -2299,7 +2299,7 @@ function renderDashboard(){
     if(mm<=0){mm+=12;yy--;}
     let total=0;
     clients.forEach(c=>{
-      if(esRevocado(c)) return;
+      // Revocados incluidos en ingresos históricos
       const val=rawMesDash(rawRows[c._rowIndex]||[],yy,mm);
       total+=montoRegistrado(val);
     });
