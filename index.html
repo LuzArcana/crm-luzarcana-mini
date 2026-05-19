@@ -621,6 +621,7 @@ let fichaYear = new Date().getFullYear();
 let mesEditandoCol = -1; // col del mes que se está editando
 let rawHeaders = []; // headers del CSV para tener 98 columnas
 let rawRows = []; // todas las filas raw del CSV (para saber el valor de cada celda de pago)
+let rawRowsRevocados = []; // filas raw de la hoja Revocados (solo para dashboard de ingresos)
 const COLORS = ['#7c5cbf','#c9a84c','#4caf7c','#cf6679','#4fa3e0','#e07a3d','#9b7de0'];
 
 // ══ AUTH ══
@@ -782,37 +783,16 @@ async function cargarRevocadosBackground() {
     try { text = new TextDecoder('utf-8', {fatal: true}).decode(buf); }
     catch(e) { text = new TextDecoder('iso-8859-1').decode(buf); }
 
-    // Parsear y agregar revocados a clients/rawRows sin redibujar la lista
-    const lines = text.replace(/^﻿/, '').split('\n').filter(l => l.trim());
-    let agregados = 0;
+    // Guardar filas raw en rawRowsRevocados — separado de clients y rawRows
+    // Solo se usan para sumar ingresos históricos en el dashboard
+    rawRowsRevocados = [];
+    const lines = text.replace(/^\uFEFF/, '').split('\n').filter(l => l.trim());
     for (let i = 1; i < lines.length; i++) {
       const row = splitCSV(lines[i], ',');
-      rawRows.push(row);
-      const g = j => (j < row.length && row[j] !== undefined) ? row[j].replace(/^"|"$/g, '').trim() : '';
-      const nombre = (g(COL.nombre) + ' ' + g(COL.apellido)).trim();
-      if (!nombre || nombre.length < 2) continue;
-      const wa_main = cleanPhone(g(COL.whatsapp)) || cleanPhone(g(COL.whatsapp2)) || cleanPhone(g(COL.wa_adicional));
-      clients.push({
-        _rowIndex: rawRows.length - 1,
-        nombre,
-        whatsapp: wa_main,
-        wa_adicional: cleanPhone(g(COL.wa_adicional)),
-        correo: g(COL.correo),
-        estatus: g(COL.estatus) || 'revocado',
-        membresia: g(COL.membresia),
-        dias_cobro: g(COL.dias_cobro),
-        dias_trans: g(COL.dias_trans),
-        fecha_ins: g(COL.fecha_ins),
-        procedencia: g(COL.procedencia),
-        notas: g(COL.notas),
-        tutor: g(COL.tutor),
-        medio_pago: g(COL.medio_pago),
-        msg: '', contacted: false,
-        _esRevocado: true,
-      });
-      agregados++;
+      rawRowsRevocados.push(row);
     }
-    // Si el dashboard está visible, actualizarlo silenciosamente
+
+    // Si el dashboard está visible, actualizarlo con los nuevos datos
     if (elId('page-dashboard').style.display !== 'none') renderDashboard();
   } catch(e) {
     // Falla silenciosa — los revocados son opcionales para el dashboard
@@ -825,7 +805,7 @@ async function reloadActivos() {
   elId('ctrlBar').style.display = 'none';
   elId('listControls').style.display = 'none';
   elId('autoloadScreen').style.display = 'flex';
-  clients = []; filtered = []; rawRows = [];
+  clients = []; filtered = []; rawRows = []; rawRowsRevocados = [];
   updateStats();
   await autoLoadActivos();
 }
@@ -1148,7 +1128,6 @@ function renderList() {
   totalDiv.style.cssText = 'text-align:center;font-size:10px;color:var(--vl);padding:4px 0;font-weight:700;letter-spacing:1px';
   totalDiv.textContent = src.length + ' alumnos' + (src.length < clients.length ? ' (filtradas de ' + clients.length + ')' : '');
   el.appendChild(totalDiv);
-  src = src.filter(c => !c._esRevocado); // nunca mostrar revocados en lista de mensajes
   src.forEach(c => {
     const idx = clients.indexOf(c); // índice real en clients[]
     const card = document.createElement('div');
@@ -1739,9 +1718,11 @@ function renderEditRows(idx) {
         </div>
         <div class="saving-dot" id="dot_${f.key}"></div>`;
     } else {
+      const mostrarCopiar = (f.key === 'whatsapp' || f.key === 'wa_adicional' || f.key === 'correo') && val;
       row.innerHTML = `
         <span class="edit-lbl">${f.lbl}</span>
         <span class="edit-val" id="ev_${f.key}" contenteditable="false" onclick="startEdit(this, '${f.key}')">${val || '—'}</span>
+        ${mostrarCopiar ? `<button onclick="navigator.clipboard.writeText('${val}').then(()=>toast('Copiado 📋','ok'))" style="font-size:9px;padding:3px 7px;border-radius:6px;border:1px solid var(--border);background:var(--card);color:var(--muted);cursor:pointer;flex-shrink:0" title="Copiar">📋</button>` : ''}
         <button class="save-btn" id="sb_${f.key}" onclick="saveEditField(${idx}, '${f.key}', ${f.col}, document.getElementById('ev_${f.key}').textContent)">Guardar</button>
         <div class="saving-dot" id="dot_${f.key}"></div>`;
     }
@@ -2238,9 +2219,15 @@ function renderDashboard(){
   // ── 1. INGRESOS DEL MES ──
   // Suma montos con $ en la columna del mes actual (incluyendo permanentes que pagaron este mes)
   let ingresosMes=0;
+  // Sumar activos
   clients.forEach(c=>{
-    // Revocados incluidos: también pagaron en su momento
     const raw=rawRows[c._rowIndex]||[];
+    const val=rawMesDash(raw,anioCurr,mesCurr);
+    const monto=montoRegistrado(val);
+    if(monto>0) ingresosMes+=monto;
+  });
+  // Sumar revocados (histórico separado)
+  rawRowsRevocados.forEach(raw=>{
     const val=rawMesDash(raw,anioCurr,mesCurr);
     const monto=montoRegistrado(val);
     if(monto>0) ingresosMes+=monto;
@@ -2347,8 +2334,11 @@ function renderDashboard(){
     if(mm<=0){mm+=12;yy--;}
     let total=0;
     clients.forEach(c=>{
-      // Revocados incluidos en ingresos históricos
       const val=rawMesDash(rawRows[c._rowIndex]||[],yy,mm);
+      total+=montoRegistrado(val);
+    });
+    rawRowsRevocados.forEach(raw=>{
+      const val=rawMesDash(raw,yy,mm);
       total+=montoRegistrado(val);
     });
     mesesGraf.push({label:MESES_NOMBRES_DASH[mm-1],total});
