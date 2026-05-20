@@ -1643,11 +1643,12 @@ function toggleRecordatorio(idx) {
   if (!c.dias_cobro) { toast('Este alumno no tiene día de cobro definido', 'err'); return; }
 
   const precio = precioDeEstatus(c.estatus) || '';
-  const link = generarLinkGCal(c.dias_cobro, c.nombre, precio);
   const nombre = firstName(c.nombre);
+  // Link corto con subdominio propio — mucho más limpio
+  const link = `agendatupago.luzarcana.com?dia=${c.dias_cobro}`;
 
   // Opción A: mensaje separado por WhatsApp — no modifica el mensaje principal
-  const cta = `${nombre} porfi dale clic para que tengas un recordatorio de tus pagos. WhatsApp nos regaña por hacer cobranza y esto nos ayuda mucho.\nDale clic al enlace 🙏👇\n${link}`;
+  const cta = `${nombre} porfi dale clic para que tengas un recordatorio de tus pagos. WhatsApp nos regaña por hacer cobranza y esto nos ayuda mucho.\nDale clic al enlace 🙏👇\nhttps://${link}`;
 
   // Abrir WA con el CTA como mensaje independiente
   window.open('https://wa.me/' + c.whatsapp + '?text=' + encodeURIComponent(cta), '_blank');
