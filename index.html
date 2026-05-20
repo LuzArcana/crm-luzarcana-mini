@@ -238,6 +238,7 @@ input[type=text]::placeholder{color:var(--muted)}
   <button class="nav-tab" onclick="showNav('aviso')" id="nav-aviso">📢 AVISO</button>
   <button class="nav-tab" onclick="showNav('dashboard')" id="nav-dashboard">📊 DASHBOARD</button>
   <button class="nav-tab" onclick="showNav('leads')" id="nav-leads">🎯 LEADS</button>
+  <button class="nav-tab" onclick="showNav('push')" id="nav-push">🔔 PUSH</button>
 </div>
 
 <!-- ══════════════ MENSAJES ══════════════ -->
@@ -506,6 +507,83 @@ input[type=text]::placeholder{color:var(--muted)}
     </div>
   </div>
 </div>
+</div>
+
+<!-- ══════════════ PUSH ══════════════ -->
+<div id="page-push" style="display:none;flex:1;flex-direction:column;overflow:hidden;min-height:0">
+  <div style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:14px">
+
+    <!-- Stats -->
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px">
+      <div style="font-family:'Cinzel',serif;font-size:11px;color:var(--gold);letter-spacing:2px;margin-bottom:12px">✦ SUSCRIPTORES</div>
+      <div style="display:flex;gap:12px">
+        <div style="flex:1;background:var(--surface);border-radius:8px;padding:12px;text-align:center">
+          <div id="push-total" style="font-size:28px;font-weight:700;color:var(--vl)">—</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:2px">Total suscritos</div>
+        </div>
+        <div style="flex:1;background:var(--surface);border-radius:8px;padding:12px;text-align:center">
+          <div id="push-web" style="font-size:28px;font-weight:700;color:var(--green)">—</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:2px">Web push</div>
+        </div>
+      </div>
+      <button onclick="loadPushStats()" style="margin-top:10px;width:100%;padding:7px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:11px;cursor:pointer;font-family:'Lato',sans-serif">↻ Actualizar</button>
+    </div>
+
+    <!-- Composer -->
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px">
+      <div style="font-family:'Cinzel',serif;font-size:11px;color:var(--gold);letter-spacing:2px;margin-bottom:12px">✦ NUEVA NOTIFICACIÓN</div>
+
+      <div style="margin-bottom:10px">
+        <label style="font-size:10px;color:var(--muted);letter-spacing:1px;display:block;margin-bottom:4px">TÍTULO</label>
+        <input id="push-title" type="text" placeholder="Ej: Nueva clase disponible ✨" maxlength="60"
+          style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:9px 11px;color:var(--text);font-family:'Lato',sans-serif;font-size:13px;outline:none">
+        <div style="text-align:right;font-size:9px;color:var(--muted);margin-top:2px"><span id="push-title-count">0</span>/60</div>
+      </div>
+
+      <div style="margin-bottom:10px">
+        <label style="font-size:10px;color:var(--muted);letter-spacing:1px;display:block;margin-bottom:4px">MENSAJE</label>
+        <textarea id="push-body" placeholder="Escribe el mensaje que verán tus alumnos..." maxlength="140" rows="3"
+          style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:9px 11px;color:var(--text);font-family:'Lato',sans-serif;font-size:13px;outline:none;resize:none"></textarea>
+        <div style="text-align:right;font-size:9px;color:var(--muted);margin-top:2px"><span id="push-body-count">0</span>/140</div>
+      </div>
+
+      <div style="margin-bottom:14px">
+        <label style="font-size:10px;color:var(--muted);letter-spacing:1px;display:block;margin-bottom:4px">URL AL DAR CLIC (opcional)</label>
+        <input id="push-url" type="url" placeholder="https://academialuzarcana.com/..."
+          style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:9px 11px;color:var(--text);font-family:'Lato',sans-serif;font-size:13px;outline:none">
+      </div>
+
+      <!-- Preview -->
+      <div id="push-preview" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:12px">
+        <div style="font-size:9px;color:var(--muted);margin-bottom:6px;letter-spacing:1px">VISTA PREVIA</div>
+        <div style="display:flex;gap:10px;align-items:flex-start">
+          <div style="width:32px;height:32px;border-radius:6px;background:var(--violet);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">✨</div>
+          <div style="flex:1">
+            <div id="prev-title" style="font-size:12px;font-weight:700;color:var(--text)">Tu título aquí</div>
+            <div id="prev-body" style="font-size:11px;color:var(--muted);margin-top:2px">Tu mensaje aquí...</div>
+            <div style="font-size:9px;color:var(--muted);margin-top:4px">academialuzarcana.com · ahora</div>
+          </div>
+        </div>
+      </div>
+
+      <button id="push-send-btn" onclick="enviarPush()" style="width:100%;padding:12px;background:linear-gradient(135deg,var(--violet),var(--vl));border:none;border-radius:10px;color:#fff;font-family:'Cinzel',serif;font-size:13px;letter-spacing:2px;cursor:pointer">
+        🔔 ENVIAR A TODOS
+      </button>
+      <div id="push-result" style="margin-top:8px;font-size:11px;text-align:center;color:var(--muted)"></div>
+    </div>
+
+    <!-- Tips -->
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px">
+      <div style="font-family:'Cinzel',serif;font-size:11px;color:var(--gold);letter-spacing:2px;margin-bottom:10px">✦ TIPS</div>
+      <div style="font-size:11px;color:var(--muted);line-height:1.7">
+        • Los alumnos reciben la notificación aunque tengan el navegador cerrado<br>
+        • Solo llega a quienes dieron permiso en la academia<br>
+        • Máximo 60 caracteres en título, 140 en mensaje<br>
+        • Puedes mandar a todos los cursos a la vez ✨
+      </div>
+    </div>
+
+  </div>
 </div>
 
 <!-- ══════════════ LEADS ══════════════ -->
@@ -2098,7 +2176,7 @@ function mailPrefix(m){if(!m)return'sin-correo@';const s=m.split(',')[0].trim();
 
 // ══ NAV ══
 function showNav(name){
-  ['mensajes','aviso','dashboard','leads'].forEach(s=>{
+  ['mensajes','aviso','dashboard','leads','push'].forEach(s=>{
     const p=elId('page-'+s);
     p.style.display=s===name?'flex':'none';
     if(s===name) p.style.flexDirection='column';
@@ -2106,6 +2184,7 @@ function showNav(name){
   });
   if(name==='leads'&&!leads.length) loadLeads();
   if(name==='dashboard') renderDashboard();
+  if(name==='push') loadPushStats();
 }
 
 // ══ PANEL MOOD ══
@@ -2751,7 +2830,89 @@ function generarLinkGCal(diasCobro, nombreAlumno, precio) {
 
 function toast(msg,type=''){const t=elId('toast');t.textContent=msg;t.className='toast show '+type;clearTimeout(t._t);t._t=setTimeout(()=>t.className='toast',2800);}
 
-// ══ NOTIFICACIONES PUSH ══
+// ══ PUSH NOTIFICATIONS (OneSignal) ══
+async function loadPushStats() {
+  try {
+    const r = await fetch('/api/push', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'stats' })
+    });
+    const d = await r.json();
+    elId('push-total').textContent = d.total ?? '—';
+    elId('push-web').textContent = d.web ?? '—';
+  } catch(e) {
+    elId('push-total').textContent = '—';
+    elId('push-web').textContent = '—';
+  }
+}
+
+// Contadores y preview en tiempo real
+document.addEventListener('DOMContentLoaded', () => {
+  const titleEl = elId('push-title');
+  const bodyEl = elId('push-body');
+  if (titleEl) {
+    titleEl.addEventListener('input', () => {
+      elId('push-title-count').textContent = titleEl.value.length;
+      elId('prev-title').textContent = titleEl.value || 'Tu título aquí';
+    });
+  }
+  if (bodyEl) {
+    bodyEl.addEventListener('input', () => {
+      elId('push-body-count').textContent = bodyEl.value.length;
+      elId('prev-body').textContent = bodyEl.value || 'Tu mensaje aquí...';
+    });
+  }
+});
+
+async function enviarPush() {
+  const title = elId('push-title').value.trim();
+  const message = elId('push-body').value.trim();
+  const url = elId('push-url').value.trim();
+
+  if (!title) { toast('Escribe un título', 'err'); return; }
+  if (!message) { toast('Escribe un mensaje', 'err'); return; }
+
+  const btn = elId('push-send-btn');
+  const result = elId('push-result');
+  btn.disabled = true;
+  btn.textContent = '⏳ Enviando...';
+  result.textContent = '';
+
+  try {
+    const r = await fetch('/api/push', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'send', title, message, url: url || 'https://academialuzarcana.com' })
+    });
+    const d = await r.json();
+    if (d.ok) {
+      toast(`✓ Notificación enviada a ${d.recipients || '?'} alumnos`, 'ok');
+      result.style.color = 'var(--green)';
+      result.textContent = `✓ Enviada · ${d.recipients || 0} destinatarios`;
+      elId('push-title').value = '';
+      elId('push-body').value = '';
+      elId('push-url').value = '';
+      elId('push-title-count').textContent = '0';
+      elId('push-body-count').textContent = '0';
+      elId('prev-title').textContent = 'Tu título aquí';
+      elId('prev-body').textContent = 'Tu mensaje aquí...';
+    } else {
+      result.style.color = 'var(--red)';
+      result.textContent = '✗ Error: ' + (d.error || 'desconocido');
+      toast('Error al enviar: ' + (d.error || ''), 'err');
+    }
+  } catch(e) {
+    result.style.color = 'var(--red)';
+    result.textContent = '✗ Error de red';
+    toast('Error de red', 'err');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '🔔 ENVIAR A TODOS';
+  }
+}
+
+
 async function solicitarNotificaciones() {
   if (!('Notification' in window)) { toast('Tu navegador no soporta notificaciones', 'err'); return; }
   const perm = await Notification.requestPermission();
