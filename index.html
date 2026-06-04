@@ -235,7 +235,6 @@ input[type=text]::placeholder{color:var(--muted)}
 
 <div class="nav-tabs">
   <button class="nav-tab on" onclick="showNav('mensajes')" id="nav-mensajes">💬 MENSAJES</button>
-  <button class="nav-tab" onclick="showNav('aviso')" id="nav-aviso">📢 AVISO</button>
   <button class="nav-tab" onclick="showNav('dashboard')" id="nav-dashboard">📊 DASHBOARD</button>
   <button class="nav-tab" onclick="showNav('leads')" id="nav-leads">🎯 LEADS</button>
   <button class="nav-tab" onclick="showNav('push')" id="nav-push">🔔 PUSH</button>
@@ -371,6 +370,17 @@ input[type=text]::placeholder{color:var(--muted)}
       <div class="fchips-wrap">
         <span class="fchips-label">💳 Medio pago</span>
         <div class="fchips" id="chipsMedioPago"></div>
+      </div>
+      <!-- Antigüedad: chips -->
+      <div class="fchips-wrap">
+        <span class="fchips-label">⏳ Antigüedad</span>
+        <div class="fchips" id="chipsAntiguedad">
+          <span class="fchip" data-filter="antiguedad" data-val="0-3" onclick="toggleChip(this)">0–3 meses</span>
+          <span class="fchip" data-filter="antiguedad" data-val="3-6" onclick="toggleChip(this)">3–6 meses</span>
+          <span class="fchip" data-filter="antiguedad" data-val="6-12" onclick="toggleChip(this)">6–12 meses</span>
+          <span class="fchip" data-filter="antiguedad" data-val="12-24" onclick="toggleChip(this)">1–2 años</span>
+          <span class="fchip" data-filter="antiguedad" data-val="24+" onclick="toggleChip(this)">2+ años 👴</span>
+        </div>
       </div>
       <!-- Procedencia: chips -->
       <div class="fchips-wrap">
@@ -1280,6 +1290,7 @@ const chipState = {
   membresia: new Set(),
   medioPago: new Set(),
   procedencia: new Set(),
+  antiguedad: new Set(),
 };
 
 function toggleChip(el) {
@@ -1354,6 +1365,21 @@ function applyFilters() {
 
     // Procedencia
     if (chipState.procedencia.size > 0 && !chipState.procedencia.has((c.procedencia||'').trim())) return false;
+
+    // Antigüedad
+    if (chipState.antiguedad.size > 0) {
+      const dias = parseInt(c.dias_trans) || 0;
+      const meses = dias / 30;
+      const match = [...chipState.antiguedad].some(rango => {
+        if (rango === '0-3')   return meses >= 0  && meses < 3;
+        if (rango === '3-6')   return meses >= 3  && meses < 6;
+        if (rango === '6-12')  return meses >= 6  && meses < 12;
+        if (rango === '12-24') return meses >= 12 && meses < 24;
+        if (rango === '24+')   return meses >= 24;
+        return false;
+      });
+      if (!match) return false;
+    }
 
     // Filtro de mes — si hay estado seleccionado, al menos UN mes debe coincidir
     if (filtroMesActivo) {
