@@ -356,21 +356,6 @@ input[type=text]::placeholder{color:var(--muted)}
         <span class="fchips-label">🏷 Estatus</span>
         <div class="fchips" id="chipsEstatus"></div>
       </div>
-      <!-- Tutor: chips -->
-      <div class="fchips-wrap">
-        <span class="fchips-label">👤 Tutor</span>
-        <div class="fchips" id="chipsTutor"></div>
-      </div>
-      <!-- Membresía: chips -->
-      <div class="fchips-wrap">
-        <span class="fchips-label">💎 Membresía</span>
-        <div class="fchips" id="chipsMembresia"></div>
-      </div>
-      <!-- Medio pago: chips -->
-      <div class="fchips-wrap">
-        <span class="fchips-label">💳 Medio pago</span>
-        <div class="fchips" id="chipsMedioPago"></div>
-      </div>
       <!-- Antigüedad: chips -->
       <div class="fchips-wrap">
         <span class="fchips-label">⏳ Antigüedad</span>
@@ -382,11 +367,7 @@ input[type=text]::placeholder{color:var(--muted)}
           <span class="fchip" data-filter="antiguedad" data-val="24+" onclick="toggleChip(this)">2+ años 👴</span>
         </div>
       </div>
-      <!-- Procedencia: chips -->
-      <div class="fchips-wrap">
-        <span class="fchips-label">🔗 Procedencia</span>
-        <div class="fchips" id="chipsProcedencia"></div>
-      </div>
+
     </div>
   </div>
 
@@ -1204,10 +1185,6 @@ function populateFiltros() {
   // Normalizar estatus: agrupar variantes de mayúsculas
   const estatusNorm = [...new Set(clients.map(c => (c.estatus||'').trim().toLowerCase()).filter(Boolean))].sort((a,b) => a.localeCompare(b,'es'));
   fillChips('chipsEstatus', 'estatus', estatusNorm);
-  fillChips('chipsTutor',       'tutor',       uniq(clients.map(c => c.tutor)));
-  fillChips('chipsMembresia',   'membresia',   uniq(clients.map(c => c.membresia)));
-  fillChips('chipsMedioPago',   'medioPago',   uniq(clients.map(c => c.medio_pago)));
-  fillChips('chipsProcedencia', 'procedencia', uniq(clients.map(c => c.procedencia)));
 }
 
 // ══ RENDER LISTA ══
@@ -1286,10 +1263,7 @@ const chipState = {
   estadoMes: new Set(),
   dia: new Set(),
   estatus: new Set(),
-  tutor: new Set(),
-  membresia: new Set(),
-  medioPago: new Set(),
-  procedencia: new Set(),
+
   antiguedad: new Set(),
 };
 
@@ -1353,18 +1327,6 @@ function applyFilters() {
       const est = (c.estatus||'').trim().toLowerCase();
       if (!chipState.estatus.has(est)) return false;
     }
-
-    // Tutor
-    if (chipState.tutor.size > 0 && !chipState.tutor.has((c.tutor||'').trim())) return false;
-
-    // Membresía
-    if (chipState.membresia.size > 0 && !chipState.membresia.has((c.membresia||'').trim())) return false;
-
-    // Medio pago
-    if (chipState.medioPago.size > 0 && !chipState.medioPago.has((c.medio_pago||'').trim())) return false;
-
-    // Procedencia
-    if (chipState.procedencia.size > 0 && !chipState.procedencia.has((c.procedencia||'').trim())) return false;
 
     // Antigüedad
     if (chipState.antiguedad.size > 0) {
