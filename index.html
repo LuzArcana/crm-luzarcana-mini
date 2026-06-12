@@ -2196,7 +2196,7 @@ function showNav(name){
     const p=elId('page-'+s);
     p.style.display=s===name?'flex':'none';
     if(s===name) p.style.flexDirection='column';
-    elId('nav-'+s).classList.toggle('on',s===name);
+    const navEl=elId('nav-'+s); if(navEl) navEl.classList.toggle('on',s===name);
   });
   if(name==='leads'&&!leads.length) loadLeads();
   if(name==='dashboard') renderDashboard();
