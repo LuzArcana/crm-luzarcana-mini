@@ -232,9 +232,9 @@ input[type=text]::placeholder{color:var(--muted)}
 .dash-bar-val{font-size:8px;color:var(--gold);font-weight:700}
 
 /* ── PWA Install Banner ── */
-#pwa-banner{display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;background:linear-gradient(135deg,#1a1128,#231c30);border-top:1px solid var(--gold);padding:14px 16px;gap:12px;align-items:center;animation:slideUp .3s ease}
+#pwa-banner{display:none;position:fixed;bottom:-100px;left:0;right:0;z-index:9999;background:linear-gradient(135deg,#1a1128,#231c30);border-top:1px solid var(--gold);padding:14px 16px;gap:12px;align-items:center;transition:bottom .3s ease}
 @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
-#pwa-banner.show{display:flex}
+#pwa-banner.show{display:flex;bottom:0}
 #pwa-banner .pwa-text{flex:1;min-width:0}
 #pwa-banner .pwa-title{font-size:13px;font-weight:700;color:var(--gold);font-family:'Cinzel',serif;letter-spacing:1px}
 #pwa-banner .pwa-sub{font-size:10px;color:var(--muted);margin-top:2px}
