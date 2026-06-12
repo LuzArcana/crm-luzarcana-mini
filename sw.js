@@ -1,4 +1,4 @@
-const CACHE = 'luzarcana-crm-v1';
+const CACHE = 'luzarcana-crm-v3';
 const ASSETS = [
   '/',
   '/index.html',
