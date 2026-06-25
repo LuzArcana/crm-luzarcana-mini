@@ -2562,7 +2562,7 @@ function parseLeads(csv){
     const row=splitCSV(lines[i],sep);
     const tel=g(row,'telefono'),nom=g(row,'nombre');
     if(!tel&&!nom) continue;
-    leads.push({telefono:tel,nombre:nom||'Sin nombre',curso_interes:g(row,'curso_interes'),fecha_contacto:g(row,'fecha_contacto'),fecha_procesado:g(row,'fecha_procesado'),temperatura:g(row,'temperatura')||'fria',objeciones:g(row,'objeciones'),preguntas:g(row,'preguntas'),sugerencia:g(row,'sugerencia_seguimiento'),estatus:g(row,'estatus')||'lead',notas:g(row,'notas'),etapa:g(row,'etapa_seguimiento')||'lead_nuevo',contactos:parseInt(g(row,'num_contactos')||'0')||0,_rowIndex:i-1,msg:''});
+    leads.push({telefono:tel,nombre:nom||'Sin nombre',curso_interes:g(row,'curso_interes'),fecha_contacto:g(row,'fecha_contacto'),fecha_procesado:g(row,'fecha_procesado'),temperatura:g(row,'temperatura')||'fria',objeciones:g(row,'objeciones'),preguntas:g(row,'preguntas'),sugerencia:g(row,'sugerencia_seguimiento'),estatus:g(row,'estatus')||'lead',notas:g(row,'notas'),etapa:g(row,'etapa_seguimiento')||'lead_nuevo',contactos:parseInt(g(row,'num_contactos')||'0')||0,_rowIndex:i-1,msg:g(row,'sugerencia_seguimiento')||''});
   }
   if(!leads.length){toast('No encontré leads','err');return;}
   leadsFiltered=[...leads];
